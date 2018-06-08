@@ -14,8 +14,7 @@ class Particle {
 
     Eigen::Matrix3f def_elastic, def_plastic;
 
-    Eigen::Matrix3f svd_w, svd_v;
-    Eigen::Vector3f svd_e;
+    Eigen::Matrix3f svd_u, svd_s, svd_v;
 
     Eigen::Matrix3f polar_r, polar_s;
 
@@ -23,15 +22,15 @@ class Particle {
     Eigen::Vector3f weight_gradient[16];
     float weight[16];
 
-    Particle() {}
-    Particle(const Eigen::Vector3f& _position, const Eigen::Vector3f& _velocity, float _mass, float _lambda, float _mu)
+    __host__ __device__ Particle() {}
+    __host__ __device__ Particle(const Eigen::Vector3f& _position, const Eigen::Vector3f& _velocity, float _mass, float _lambda, float _mu)
         : position(_position), velocity(_velocity), mass(_mass), lambda(_lambda), mu(_mu),
           def_elastic(Eigen::Matrix3f::Identity()), def_plastic(Eigen::Matrix3f::Identity()),
-          svd_w(Eigen::Matrix3f::Identity()), svd_v(Eigen::Matrix3f::Identity()), svd_e(Eigen::Vector3f::Ones()),
+          svd_u(Eigen::Matrix3f::Identity()), svd_s(Eigen::Matrix3f::Identity()), svd_v(Eigen::Matrix3f::Identity()),
           polar_r(Eigen::Matrix3f::Identity()), polar_s(Eigen::Matrix3f::Identity())
     {}
 
-    ~Particle();
+    __host__ __device__ ~Particle() {}
 
     __host__ __device__ void updatePosition();
     __host__ __device__ void updateGradient();

@@ -2,8 +2,8 @@
 #define POINT_CLOUD_H_
 
 #include <vector>
-#include <thrust/device_vector.h>
 #include <Eigen/Dense>
+#include <thrust/device_vector.h>
 
 #include "particle.h"
 
@@ -11,15 +11,14 @@ class PointCloud {
   public:
     int size;
     float max_velocity;
-    std::vector<Particle> particles;
-    thrust::device_vector<Particle> dv_particles;
+    thrust::device_vector<Particle> particles;
 
     PointCloud();
-    PointCloud(int);
+    PointCloud(const std::vector<Particle>&);
     PointCloud(const PointCloud&);
     virtual ~PointCloud();
 
-    void scale(const Eigen::Vector3f&, const Eigen::Vector3f&);
+    void scale(const Eigen::Vector3f&, const float);
     void translate(const Eigen::Vector3f&);
     void update();
     void merge(const PointCloud&);

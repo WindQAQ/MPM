@@ -1,8 +1,10 @@
+#include <cassert>
 #include <Eigen/Dense>
-
 #include <thrust/for_each.h>
 #include <thrust/functional.h>
 #include <thrust/execution_policy.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 #include "mpm_solver.h"
 
@@ -240,4 +242,39 @@ __host__ void MPMSolver::updateParticlePositions() {
             p.updatePosition();
         }
     );
+}
+
+__host__ void MPMSolver::simulate() {
+    // TODO
+}
+
+__host__ void MPMSolver::bindGLBuffer(const GLuint buffer) {
+    cudaError_t ret;
+    ret = cudaGraphicsGLRegisterBuffer(&vbo_resource, buffer, cudaGraphicsMapFlagsWriteDiscard);
+    assert(ret == cudaSuccess);
+}
+
+__host__ void MPMSolver::writeGLBuffer() {
+    cudaError_t ret;
+    float4 *bufptr;
+    size_t size;
+
+    ret = cudaGraphicsMapResources(1, &vbo_resource, NULL);
+    assert(ret == cudaSuccess);
+    ret = cudaGraphicsResourceGetMappedPointer((void **)&bufptr, &size, vbo_resource);
+    assert(ret == cudaSuccess);
+
+    assert(bufptr != nullptr && size >= particles.size());
+    thrust::transform(
+        thrust::device,
+        particles.begin(),
+        particles.end(),
+        bufptr,
+        [=] __device__ (Particle& p) -> float4 {
+            return make_float4(p.position(0), p.position(1), p.position(2), 1.0);
+        }
+    );
+
+    ret = cudaGraphicsUnmapResources(1, &vbo_resource, NULL);
+    assert(ret == cudaSuccess);
 }

@@ -2,15 +2,31 @@
 #include <cstdio>
 #include <vector>
 #include <Eigen/Dense>
-#include <thrust/copy.h>
-#include <thrust/for_each.h>
-#include <thrust/device_vector.h>
-#include <thrust/execution_policy.h>
 
 #include "grid.h"
 #include "constant.h"
 #include "particle.h"
 #include "mpm_solver.h"
+
+#include <glad/glad.h>
+
+#include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+const unsigned int WIDTH = 800;
+const unsigned int HEIGHT = 600;
+
+void errorCallback(int error, const char* description) {
+    std::cerr << "Errors: " << description << std::endl;
+}
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
 
 int main() {
     std::vector<Grid> grids;
@@ -52,6 +68,51 @@ int main() {
     MPMSolver mpm_solver(particles, grids);
 
     // cudaDeviceSynchronize();
+
+    // glfw: initialize and configure
+    if (!glfwInit()) return EXIT_FAILURE;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    // glfw window creation
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+    glfwMakeContextCurrent(window);
+
+    // glfw setting callback
+    glfwSetErrorCallback(errorCallback);
+    glfwSetKeyCallback(window, keyCallback);
+
+    // glad: load all OpenGL function pointers
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::cerr << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+    glEnable(GL_DEPTH_TEST);
+
+    // render loop
+    while (!glfwWindowShouldClose(window)) {
+        // render
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // glfw: swap buffers and poll IO events
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return 0;
 }

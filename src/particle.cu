@@ -6,13 +6,13 @@ __host__ __device__ void Particle::updatePosition() {
     position += TIMESTEP * velocity;
 }
 
-__host__ __device__ void Particle::updateGradient() {
-    velocity_gradient *= TIMESTEP;
-    velocity_gradient.diagonal().array() += 1.0f;
-    def_elastic = velocity_gradient * def_elastic;
+__host__ __device__ void Particle::updateVelocity(const Eigen::Vector3f& velocity_pic, const Eigen::Vector3f& velocity_flip) {
+    velocity = (1 - ALPHA) * velocity_pic + ALPHA * velocity_flip;
 }
 
-__host__ __device__ void Particle::applyPlasticity() {
+__host__ __device__ void Particle::updateDeformationGradient(const Eigen::Matrix3f& velocity_gradient) {
+    def_elastic = (Eigen::Matrix3f::Identity() + (TIMESTEP * velocity_gradient)) * def_elastic;
+
     Eigen::Matrix3f force_all(def_elastic * def_plastic);
 
     auto& u = svd_u;
@@ -38,6 +38,49 @@ __host__ __device__ void Particle::applyPlasticity() {
 
     def_plastic = v_tmp * u.transpose() * force_all;
     def_elastic = u_tmp * v.transpose();
+}
+
+__host__ __device__ void Particle::applyBoundaryCollision() {
+    float vn;
+    Eigen::Vector3f vt, normal, pos((position * TIMESTEP).cwiseProduct(velocity));
+
+    bool collision;
+
+    for (int i = 0; i < 3; i++) {
+        collision = false;
+        normal = Eigen::Vector3f::Zero();
+
+        if (pos(i) <= BOX_BOUNDARY_1) {
+            collision = true;
+            normal(i) = 1.0f;
+        }
+        else if (pos(i) >= BOX_BOUNDARY_2) {
+            collision = true;
+            normal(i) = -1.0f;
+        }
+
+        if (collision) {
+            vn = velocity.dot(normal);
+
+            if (vn >= 0.0f) continue;
+
+            velocity(i) = 0.0f;
+            for (int j = 0; j < 3; j++) {
+                if (j != i) {
+                    velocity(j) *= STICKY_WALL;
+                }
+            }
+
+            vt = velocity - vn * normal;
+
+            if (vt.norm() <= -FRICTION * vn) {
+                velocity = Eigen::Vector3f::Zero();
+                return;
+            }
+
+            velocity = vt + FRICTION * vn *  vt.normalized();
+        }
+    }
 }
 
 __host__ __device__ const Eigen::Matrix3f Particle::energyDerivative() {

@@ -16,6 +16,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "renderer.h"
+
 const unsigned int WIDTH = 800;
 const unsigned int HEIGHT = 600;
 
@@ -79,7 +81,7 @@ int main() {
 #endif
 
     // glfw window creation
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Sand-MPM", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -100,11 +102,13 @@ int main() {
     std::cerr << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
 
+    Renderer renderer(WIDTH, HEIGHT, particles.size());
+    mpm_solver.bindGLBuffer(renderer.snow_buffers.vbo);
+
     // render loop
     while (!glfwWindowShouldClose(window)) {
-        // render
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        mpm_solver.writeGLBuffer();
+        renderer.render();
 
         // glfw: swap buffers and poll IO events
         glfwSwapBuffers(window);

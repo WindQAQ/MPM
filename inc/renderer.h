@@ -1,8 +1,6 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "camera.h"
-
 struct GLBuffers {
     GLuint vao;
     GLuint vbo;
@@ -21,7 +19,7 @@ class Renderer {
     GLuint getSnowVBO();
 
   private:
-    const GLfloat wall_vertices[20] = {
+    const GLfloat wall_vertices_[20] = {
         // positions        // texture coords
          0.5f,  0.5f, 0.0f, 1.0f, 1.0f,  //
         -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,  //
@@ -29,34 +27,34 @@ class Renderer {
          0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  //
     };
 
-    const GLuint indices[6] = {
+    const GLuint indices_[6] = {
         0, 1, 2, //
         2, 3, 0
     };
 
     // window size
-    int width;
-    int height;
-    float aspect_ratio;
+    int width_;
+    int height_;
+    float aspect_ratio_;
 
     // particle number;
-    int number;
+    int number_;
 
-    GLuint plane_shader;
-    GLuint snow_shader;
+    GLuint plane_shader_;
+    GLuint snow_shader_;
 
-    GLuint texture1;
-    GLuint texture2;
+    GLuint texture1_;
+    GLuint texture2_;
 
-    GLBuffers plane_buffers;
-    CUDABUffers snow_buffers;
+    GLBuffers plane_buffers_;
+    CUDABUffers snow_buffers_;
 
-    CameraControl camera;
-    glm::mat4 view;
-    glm::mat4 projection;
+    glm::mat4 view_;
+    glm::mat4 projection_;
+    float fov_ = 45.0f;
 
     // snow point size;
-    GLfloat radius = 0.01f;
+    GLfloat radius_ = 0.02f;
 
     void renderWall();
     void renderSnow();

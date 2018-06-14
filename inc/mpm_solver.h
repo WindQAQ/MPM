@@ -22,6 +22,8 @@ class MPMSolver {
     }
     __host__ ~MPMSolver() {}
 
+    __host__ void resetGrid();
+    __host__ void initialTransfer();
     __host__ void transferData();
     __host__ void computeVolumes();
     __host__ void updateVelocities();

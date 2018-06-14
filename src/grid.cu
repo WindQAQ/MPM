@@ -1,22 +1,31 @@
 #include "constant.h"
 #include "grid.h"
 
+__device__ void Grid::reset() {
+    mass = 0.0f;
+    force.setZero();
+    velocity.setZero();
+    velocity_star.setZero();
+}
+
 __device__ void Grid::updateVelocity() {
-    float inv_mass = 1.0f / mass;
-    force(1) += (mass * GRAVITY);
-    velocity *= inv_mass;
-    velocity_star = velocity + TIMESTEP * inv_mass * force;
+    if (mass > 0.0f) {
+        float inv_mass = 1.0f / mass;
+        force(1) += (mass * GRAVITY);
+        velocity *= inv_mass;
+        velocity_star = velocity + TIMESTEP * inv_mass * force;
+    }
 }
 
 __device__ void Grid::applyBoundaryCollision() {
     float vn;
-    Eigen::Vector3f vt, normal, pos((idx.cast<float>() * PARTICLE_DIAM * TIMESTEP).cwiseProduct(velocity_star));
+    Eigen::Vector3f vt, normal, pos((idx.cast<float>() * PARTICLE_DIAM) + (TIMESTEP * velocity_star));
 
     bool collision;
 
     for (int i = 0; i < 3; i++) {
         collision = false;
-        normal = Eigen::Vector3f::Zero();
+        normal.setZero();
 
         if (pos(i) <= BOX_BOUNDARY_1) {
             collision = true;
@@ -32,7 +41,7 @@ __device__ void Grid::applyBoundaryCollision() {
 
             if (vn >= 0.0f) continue;
 
-            velocity_star(i) = 0.0f;
+            velocity_star(i) = 0.0;
             for (int j = 0; j < 3; j++) {
                 if (j != i) {
                     velocity_star(j) *= STICKY_WALL;
@@ -42,7 +51,7 @@ __device__ void Grid::applyBoundaryCollision() {
             vt = velocity_star - vn * normal;
 
             if (vt.norm() <= -FRICTION * vn) {
-                velocity_star = Eigen::Vector3f::Zero();
+                velocity_star.setZero();
                 return;
             }
 

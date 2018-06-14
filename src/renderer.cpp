@@ -33,8 +33,7 @@ Renderer::Renderer(int width, int height, int number)
     plane_shader_ = loadShader("./src/plane.vert", "./src/plane.frag");
 
     glUseProgram(plane_shader_);
-    glUniform1i(glGetUniformLocation(plane_shader_, "texture1"), 0);
-    glUniform1i(glGetUniformLocation(plane_shader_, "texture2"), 1);
+
     glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "view"), 1, GL_FALSE, glm::value_ptr(view_));
     glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "projection"), 1, GL_FALSE, glm::value_ptr(projection_));
 
@@ -86,11 +85,13 @@ void Renderer::render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     renderWall();
+    renderFloor();
     renderSnow();
 }
 
 void Renderer::renderWall() {
     glUseProgram(plane_shader_);
+    glUniform1i(glGetUniformLocation(plane_shader_, "texture1"), 1);
     glBindVertexArray(plane_buffers_.vao);
 
     glm::mat4 model(1.0f);
@@ -98,8 +99,14 @@ void Renderer::renderWall() {
     model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
     glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
 
-    model = glm::mat4(1.0f);
+void Renderer::renderFloor() {
+    glUseProgram(plane_shader_);
+    glUniform1i(glGetUniformLocation(plane_shader_, "texture1"), 0);
+    glBindVertexArray(plane_buffers_.vao);
+
+    glm::mat4 model(1.0f);
     model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
     model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "model"), 1, GL_FALSE, glm::value_ptr(model));

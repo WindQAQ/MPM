@@ -57,6 +57,7 @@ class Renderer {
     GLfloat radius_ = 0.02f;
 
     void renderWall();
+    void renderFloor();
     void renderSnow();
 };
 

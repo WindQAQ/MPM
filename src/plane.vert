@@ -9,6 +9,6 @@ uniform mat4 view;
 uniform mat4 projection;
 
 void main() {
-  gl_Position = projection * view * model * vec4(a_position, 1.0);
-  texture_coordinate = a_texture_coordinate;
+    gl_Position = projection * view * model * vec4(a_position, 1.0);
+    texture_coordinate = a_texture_coordinate;
 }

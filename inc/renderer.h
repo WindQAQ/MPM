@@ -18,10 +18,7 @@ class Renderer {
   public:
     Renderer(int width, int height, int number);
     void render();
-    void renderWall();
-    void renderSnow();
-
-    CUDABUffers snow_buffers;
+    GLuint getSnowVBO();
 
   private:
     const GLfloat wall_vertices[20] = {
@@ -33,14 +30,16 @@ class Renderer {
     };
 
     const GLuint indices[6] = {
-		    0, 1, 2, //
-		    2, 3, 0
-	  };
+        0, 1, 2, //
+        2, 3, 0
+    };
 
+    // window size
     int width;
     int height;
     float aspect_ratio;
 
+    // particle number;
     int number;
 
     GLuint plane_shader;
@@ -50,12 +49,17 @@ class Renderer {
     GLuint texture2;
 
     GLBuffers plane_buffers;
+    CUDABUffers snow_buffers;
 
     CameraControl camera;
     glm::mat4 view;
     glm::mat4 projection;
 
-    float radius = 0.008f;
+    // snow point size;
+    GLfloat radius = 0.01f;
+
+    void renderWall();
+    void renderSnow();
 };
 
 #endif

@@ -8,6 +8,10 @@
 
 #include "mpm_solver.h"
 
+#define IN_GRID(POS) (0 <= POS(0) && POS(0) < GRID_BOUND_X && \
+                      0 <= POS(1) && POS(1) < GRID_BOUND_Y && \
+                      0 <= POS(2) && POS(2) < GRID_BOUND_Z)
+
 __device__ float NX(const float& x) {
     if (x < 1.0f) {
         return 0.5f * (x * x * x) - (x * x) + (2.0f / 3.0f);
@@ -48,57 +52,76 @@ __device__ int getGridIndex(const Eigen::Vector3i& pos) {
     return (pos(2) * GRID_BOUND_Y * GRID_BOUND_X) + (pos(1) * GRID_BOUND_X) + pos(0);
 }
 
+__host__ void MPMSolver::initialTransfer() {
+    Grid *grid_ptr = thrust::raw_pointer_cast(&grids[0]);
+
+    auto ff = [=] __device__ (Particle& p) {
+        float h_inv = 1.0f / PARTICLE_DIAM;
+        Eigen::Vector3i pos((p.position * h_inv).cast<int>());
+
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
+                    auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
+                    Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
+                    int grid_idx = getGridIndex(_pos);
+                    float mi = p.mass * weight(diff.cwiseAbs());
+                    atomicAdd(&(grid_ptr[grid_idx].mass), mi);
+                }
+            }
+        }
+    };
+
+    thrust::for_each(thrust::device, particles.begin(), particles.end(), ff);
+}
+
+__host__ void MPMSolver::resetGrid() {
+    thrust::for_each(
+        thrust::device,
+        grids.begin(),
+        grids.end(),
+        [=] __device__ (Grid& g) {
+            g.reset();
+        }
+    );
+}
+
 __host__ void MPMSolver::transferData() {
     Grid *grid_ptr = thrust::raw_pointer_cast(&grids[0]);
 
-    if (initial_transfer) {
-        auto ff = [=] __device__ (Particle& p) {
-            float h_inv = 1.0f / PARTICLE_DIAM;
-            Eigen::Vector3i pos((p.position * h_inv).cast<int>());
+    auto ff = [=] __device__ (Particle& p) {
+        float h_inv = 1.0f / PARTICLE_DIAM;
+        Eigen::Vector3i pos((p.position * h_inv).cast<int>());
+        Eigen::Matrix3f volume_stress = -1.0f * p.energyDerivative();
 
-            for (int z = -2; z <= 2; z++) {
-                for (int y = -2; y <= 2; y++) {
-                    for (int x = -2; x <= 2; x++) {
-                        auto _pos = pos + Eigen::Vector3i(x, y, z);
-                        Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
-                        int grid_idx = getGridIndex(_pos);
-                        float mi = p.mass * weight(diff.cwiseAbs());
-                        atomicAdd(&(grid_ptr[grid_idx].mass), mi);
-                    }
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
+                    auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
+                    Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
+                    auto gw = gradientWeight(diff);
+                    int grid_idx = getGridIndex(_pos);
+
+                    Eigen::Vector3f f = volume_stress * gw;
+
+                    float mi = p.mass * weight(diff.cwiseAbs());
+                    atomicAdd(&(grid_ptr[grid_idx].mass), mi);
+                    atomicAdd(&(grid_ptr[grid_idx].velocity(0)), p.velocity(0) * mi);
+                    atomicAdd(&(grid_ptr[grid_idx].velocity(1)), p.velocity(1) * mi);
+                    atomicAdd(&(grid_ptr[grid_idx].velocity(2)), p.velocity(2) * mi);
+                    atomicAdd(&(grid_ptr[grid_idx].force(0)), f(0));
+                    atomicAdd(&(grid_ptr[grid_idx].force(1)), f(1));
+                    atomicAdd(&(grid_ptr[grid_idx].force(2)), f(2));
                 }
             }
-        };
-        thrust::for_each(thrust::device, particles.begin(), particles.end(), ff);
-        initial_transfer = false;
-    }
-    else {
-        auto ff = [=] __device__ (Particle& p) {
-            float h_inv = 1.0f / PARTICLE_DIAM;
-            Eigen::Vector3i pos((p.position * h_inv).cast<int>());
+        }
+    };
 
-            for (int z = -2; z <= 2; z++) {
-                for (int y = -2; y <= 2; y++) {
-                    for (int x = -2; x <= 2; x++) {
-                        auto _pos = pos + Eigen::Vector3i(x, y, z);
-                        Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
-                        auto gw = gradientWeight(diff);
-                        int grid_idx = getGridIndex(_pos);
-                        Eigen::Vector3f f = -1.0f * p.energyDerivative() * gw;
-                        float mi = p.mass * weight(diff.cwiseAbs());
-                        Eigen::Vector3f vm = p.velocity * mi;
-                        atomicAdd(&(grid_ptr[grid_idx].mass), mi);
-                        atomicAdd(&(grid_ptr[grid_idx].velocity(0)), vm(0));
-                        atomicAdd(&(grid_ptr[grid_idx].velocity(1)), vm(1));
-                        atomicAdd(&(grid_ptr[grid_idx].velocity(2)), vm(2));
-                        atomicAdd(&(grid_ptr[grid_idx].force(0)), f(0));
-                        atomicAdd(&(grid_ptr[grid_idx].force(1)), f(1));
-                        atomicAdd(&(grid_ptr[grid_idx].force(2)), f(2));
-                    }
-                }
-            }
-        };
-        thrust::for_each(thrust::device, particles.begin(), particles.end(), ff);
-    }
+    thrust::for_each(thrust::device, particles.begin(), particles.end(), ff);
 }
 
 __host__ void MPMSolver::computeVolumes() {
@@ -110,10 +133,12 @@ __host__ void MPMSolver::computeVolumes() {
         float p_density = 0.0f;
         float inv_grid_volume = h_inv * h_inv * h_inv;
 
-        for (int z = -2; z <= 2; z++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int x = -2; x <= 2; x++) {
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
                     auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
                     Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
                     int grid_idx = getGridIndex(_pos);
                     p_density += grid_ptr[grid_idx].mass * inv_grid_volume * weight(diff.cwiseAbs());
@@ -157,10 +182,12 @@ __host__ void MPMSolver::updateDeformationGradient() {
         Eigen::Vector3i pos((p.position * h_inv).cast<int>());
         Eigen::Matrix3f velocity_gradient(Eigen::Matrix3f::Zero());
 
-        for (int z = -2; z <= 2; z++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int x = -2; x <= 2; x++) {
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
                     auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
                     Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
                     Eigen::Vector3f gw = gradientWeight(diff);
                     int grid_idx = getGridIndex(_pos);
@@ -194,16 +221,18 @@ __host__ void MPMSolver::updateParticleVelocities() {
         Eigen::Vector3f velocity_pic(Eigen::Vector3f::Zero()),
                         velocity_flip(p.velocity);
 
-        for (int z = -2; z <= 2; z++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int x = -2; x <= 2; x++) {
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
                     auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
                     Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
                     int grid_idx = getGridIndex(_pos);
                     float w = weight(diff.cwiseAbs());
                     auto grid = grid_ptr[grid_idx];
                     velocity_pic += grid.velocity_star * w;
-                    velocity_flip = (grid.velocity_star - grid.velocity) * w;
+                    velocity_flip += (grid.velocity_star - grid.velocity) * w;
                 }
             }
         }
@@ -245,7 +274,23 @@ __host__ void MPMSolver::updateParticlePositions() {
 }
 
 __host__ void MPMSolver::simulate() {
-    // TODO
+
+    resetGrid();
+
+    if (initial_transfer) {
+        initialTransfer();
+        computeVolumes();
+        initial_transfer = false;
+    }
+    else {
+        transferData();
+    }
+    updateVelocities();
+    bodyCollisions();
+    updateDeformationGradient();
+    updateParticleVelocities();
+    particleBodyCollisions();
+    updateParticlePositions();
 }
 
 __host__ void MPMSolver::bindGLBuffer(const GLuint buffer) {
@@ -264,14 +309,14 @@ __host__ void MPMSolver::writeGLBuffer() {
     ret = cudaGraphicsResourceGetMappedPointer((void **)&bufptr, &size, vbo_resource);
     assert(ret == cudaSuccess);
 
-    assert(bufptr != nullptr && size >= particles.size());
+    assert(bufptr != nullptr && size >= particles.size() * sizeof(float4));
     thrust::transform(
         thrust::device,
         particles.begin(),
         particles.end(),
         bufptr,
         [=] __device__ (Particle& p) -> float4 {
-            return make_float4(p.position(0), p.position(1), p.position(2), 1.0);
+            return make_float4(3.0 * p.position(0) - 1.0, 3.0 * p.position(1), 3.0 * p.position(2), 1.0);
         }
     );
 

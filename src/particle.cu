@@ -18,23 +18,23 @@ __host__ __device__ void Particle::updateDeformationGradient(const Eigen::Matrix
     auto& u = svd_u;
     auto& s = svd_s;
     auto& v = svd_v;
-    auto e = s.diagonal().array();
 
     linalg::svd3(def_elastic, u, s, v);
 
     // clip values
+    auto e = s.diagonal().array();
     e = e.min(CRIT_STRETCH).max(CRIT_COMPRESS);
 
 #if ENABLE_IMPLICIT
     polar_r = u * v.transpose();
     polar_s = v;
-    polar_s.diagonal().array() *= s.diagonal().array();
+    polar_s.array().colwise() *= e;
     polar_s = polar_s * v.transpose();
 #endif
 
     Eigen::Matrix3f u_tmp(u), v_tmp(v);
-    u_tmp.diagonal().array() *= e;
-    v_tmp.diagonal().array() /= e;
+    u_tmp.array().rowwise() *= e.transpose();
+    v_tmp.array().rowwise() /= e.transpose();
 
     def_plastic = v_tmp * u.transpose() * force_all;
     def_elastic = u_tmp * v.transpose();
@@ -42,13 +42,13 @@ __host__ __device__ void Particle::updateDeformationGradient(const Eigen::Matrix
 
 __host__ __device__ void Particle::applyBoundaryCollision() {
     float vn;
-    Eigen::Vector3f vt, normal, pos((position * TIMESTEP).cwiseProduct(velocity));
+    Eigen::Vector3f vt, normal, pos(position + TIMESTEP * velocity);
 
     bool collision;
 
     for (int i = 0; i < 3; i++) {
         collision = false;
-        normal = Eigen::Vector3f::Zero();
+        normal.setZero();
 
         if (pos(i) <= BOX_BOUNDARY_1) {
             collision = true;
@@ -74,7 +74,7 @@ __host__ __device__ void Particle::applyBoundaryCollision() {
             vt = velocity - vn * normal;
 
             if (vt.norm() <= -FRICTION * vn) {
-                velocity = Eigen::Vector3f::Zero();
+                velocity.setZero();
                 return;
             }
 
@@ -85,11 +85,11 @@ __host__ __device__ void Particle::applyBoundaryCollision() {
 
 __host__ __device__ const Eigen::Matrix3f Particle::energyDerivative() {
     auto& u = svd_u;
-    auto& s = svd_s;
     auto& v = svd_v;
 
     float harden = HARDENING * expf(1 - linalg::determinant(def_plastic)),
-                   je = s.diagonal().prod();
+                    // je = linalg::determinant(def_elastic);
+                    je = svd_s.diagonal().prod();
 
     Eigen::Matrix3f tmp(2.0f * mu * (def_elastic - u * v.transpose()) * def_elastic.transpose());
 

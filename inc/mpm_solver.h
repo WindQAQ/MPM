@@ -13,13 +13,8 @@
 
 class MPMSolver {
   public:
-    __host__ MPMSolver(const std::vector<Particle>& _particles, const std::vector<Grid>& _grids) {
-        particles.resize(_particles.size());
-        grids.resize(_grids.size());
-
-        thrust::copy(_particles.begin(), _particles.end(), particles.begin());
-        thrust::copy(_grids.begin(), _grids.end(), grids.begin());
-    }
+    __host__ MPMSolver(const std::vector<Particle>&);
+    __host__ MPMSolver(const std::vector<Particle>&, const std::vector<Grid>&);
     __host__ ~MPMSolver() {}
 
     __host__ void resetGrid();

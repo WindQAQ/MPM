@@ -52,6 +52,34 @@ __device__ int getGridIndex(const Eigen::Vector3i& pos) {
     return (pos(2) * GRID_BOUND_Y * GRID_BOUND_X) + (pos(1) * GRID_BOUND_X) + pos(0);
 }
 
+struct f {
+    __host__ __device__
+    Grid operator()(const int& idx) {
+        return Grid(Eigen::Vector3i(idx % GRID_BOUND_X, idx % (GRID_BOUND_X * GRID_BOUND_Y) / GRID_BOUND_X, idx / (GRID_BOUND_X * GRID_BOUND_Y)));
+    }
+};
+
+__host__ MPMSolver::MPMSolver(const std::vector<Particle>& _particles) {
+    particles.resize(_particles.size());
+    thrust::copy(_particles.begin(), _particles.end(), particles.begin());
+
+    grids.resize(GRID_BOUND_X * GRID_BOUND_Y * GRID_BOUND_Z);
+    thrust::tabulate(
+        thrust::device,
+        grids.begin(),
+        grids.end(),
+        f()
+    );
+}
+
+__host__ MPMSolver::MPMSolver(const std::vector<Particle>& _particles, const std::vector<Grid>& _grids) {
+    particles.resize(_particles.size());
+    grids.resize(_grids.size());
+
+    thrust::copy(_particles.begin(), _particles.end(), particles.begin());
+    thrust::copy(_grids.begin(), _grids.end(), grids.begin());
+}
+
 __host__ void MPMSolver::initialTransfer() {
     Grid *grid_ptr = thrust::raw_pointer_cast(&grids[0]);
 

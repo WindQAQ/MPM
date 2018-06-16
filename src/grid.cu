@@ -1,14 +1,24 @@
 #include "constant.h"
 #include "grid.h"
 
-__device__ void Grid::reset() {
+__host__ __device__ Grid& Grid::operator=(const Grid& other) {
+    idx = other.idx;
+    force = other.force;
+    velocity = other.velocity;
+    velocity_star = other.velocity_star;
+    mass = other.mass;
+
+    return *this;
+}
+
+__host__ __device__ void Grid::reset() {
     mass = 0.0f;
     force.setZero();
     velocity.setZero();
     velocity_star.setZero();
 }
 
-__device__ void Grid::updateVelocity() {
+__host__ __device__ void Grid::updateVelocity() {
     if (mass > 0.0f) {
         float inv_mass = 1.0f / mass;
         force(1) += (mass * GRAVITY);
@@ -17,7 +27,7 @@ __device__ void Grid::updateVelocity() {
     }
 }
 
-__device__ void Grid::applyBoundaryCollision() {
+__host__ __device__ void Grid::applyBoundaryCollision() {
     float vn;
     Eigen::Vector3f vt, normal, pos((idx.cast<float>() * PARTICLE_DIAM) + (TIMESTEP * velocity_star));
 

@@ -8,16 +8,18 @@
 class Grid {
   public:
     Eigen::Vector3i idx;
-    float mass;
     Eigen::Vector3f force, velocity, velocity_star;
+    float mass;
 
-    __host__ __device__ Grid(): Grid(Eigen::Vector3i::Zero()) {}
-    __host__ __device__ Grid(Eigen::Vector3i _idx): idx(_idx), mass(0.0f), force(0.0f, 0.0f, 0.0f), velocity(0.0f, 0.0f, 0.0f), velocity_star(0.0f, 0.0f, 0.0f) {}
+    __host__ __device__ Grid() {}
+    __host__ __device__ Grid(const Eigen::Vector3i _idx): idx(_idx), mass(0.0f), force(0.0f, 0.0f, 0.0f), velocity(0.0f, 0.0f, 0.0f), velocity_star(0.0f, 0.0f, 0.0f) {}
     __host__ __device__ virtual ~Grid() {}
 
-    __device__ void reset();
-    __device__ void updateVelocity();
-    __device__ void applyBoundaryCollision();
+    __host__ __device__ Grid& operator=(const Grid&);
+
+    __host__ __device__ void reset();
+    __host__ __device__ void updateVelocity();
+    __host__ __device__ void applyBoundaryCollision();
 };
 
 #endif  // GRID_H_

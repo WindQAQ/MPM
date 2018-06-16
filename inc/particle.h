@@ -5,7 +5,7 @@
 
 class Particle {
   public:
-    float volume, mass, density;
+    float volume, mass;
     Eigen::Vector3f position, velocity;
 
     float lambda, mu;
@@ -25,6 +25,7 @@ class Particle {
     {}
 
     __host__ __device__ virtual ~Particle() {}
+    __host__ __device__ Particle& operator=(const Particle&);
 
     __host__ __device__ void updatePosition();
     __host__ __device__ void updateVelocity(const Eigen::Vector3f&, const Eigen::Vector3f&);

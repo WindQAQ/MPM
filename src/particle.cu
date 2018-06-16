@@ -2,6 +2,24 @@
 #include "constant.h"
 #include "linalg.h"
 
+__host__ __device__ Particle& Particle::operator=(const Particle& other) {
+    volume = other.volume;
+    mass = other.mass;
+    position = other.position;
+    velocity = other.velocity;
+    lambda = other.lambda;
+    mu = other.mu;
+    def_elastic = other.def_elastic;
+    def_plastic = other.def_plastic;
+    svd_u = other.svd_u;
+    svd_s = other.svd_s;
+    svd_v = other.svd_v;
+    polar_r = other.polar_r;
+    polar_s = other.polar_s;
+
+    return *this;
+}
+
 __host__ __device__ void Particle::updatePosition() {
     position += TIMESTEP * velocity;
 }
@@ -99,7 +117,7 @@ __host__ __device__ const Eigen::Matrix3f Particle::energyDerivative() {
 }
 
 #if ENABLE_IMPLICT
-__host__ __device__ Eigen::Vector3f Particle::deltaForce(const Eigen::Vector3f& u, const Eigen::Vector3f& wg) {
+__host__ __device__ Eigen::Vector3f Particle::deltaForce(const Eigen::Vector3f& u, const Eigen::Vector3f& gw) {
     Matrix3f delta_elastic = TIMESTEP * (u * v.transpose()) * def_elastic;
 
     // TODO: wtf is the implicit math pdf???

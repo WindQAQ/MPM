@@ -36,6 +36,23 @@ namespace linalg {
 
         return b;
     }
+
+    __host__ __device__ Eigen::Matrix3f cofactor(const Eigen::Matrix3f& a) {
+        // http://www.mathwords.com/c/cofactor_matrix.htm
+        Eigen::Matrix3f b;
+
+        b(0) = a(4) * a(8) - a(5) * a(7);
+        b(1) = a(5) * a(6) - a(3) * a(8);
+        b(2) = a(3) * a(7) - a(4) * a(6);
+        b(3) = a(2) * a(7) - a(1) * a(8);
+        b(4) = a(0) * a(8) - a(2) * a(6);
+        b(5) = a(1) * a(6) - a(0) * a(7);
+        b(6) = a(1) * a(5) - a(2) * a(4);
+        b(7) = a(2) * a(3) - a(0) * a(5);
+        b(8) = a(0) * a(4) - a(1) * a(3);
+
+        return b;
+    }
 }
 
 #endif  // LINALG_H_

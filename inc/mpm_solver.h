@@ -23,6 +23,10 @@ class MPMSolver {
     __host__ void computeVolumes();
     __host__ void updateVelocities();
     __host__ void bodyCollisions();
+#if ENABLE_IMPLICIT
+    __host__ void computeAr();
+    __host__ void integrateImplicit();
+#endif
     __host__ void updateDeformationGradient();
     __host__ void updateParticleVelocities();
     __host__ void particleBodyCollisions();
@@ -31,6 +35,7 @@ class MPMSolver {
     __host__ void simulate();
     __host__ void bindGLBuffer(const GLuint);
     __host__ void writeGLBuffer();
+    __host__ void writeToFile(const std::string&);
 
   private:
     thrust::device_vector<Particle> particles;

@@ -1,8 +1,13 @@
 #include <cassert>
+
+#include <fstream>
+
 #include <Eigen/Dense>
+
 #include <thrust/for_each.h>
 #include <thrust/functional.h>
 #include <thrust/execution_policy.h>
+
 #include <cuda.h>
 #include <cuda_runtime.h>
 
@@ -43,7 +48,12 @@ __device__ float weight(const Eigen::Vector3f& xpgp_diff) {
 
 __device__ Eigen::Vector3f gradientWeight(const Eigen::Vector3f& xpgp_diff) {
     const auto& v = xpgp_diff;
+    /*
     return (1.0f / PARTICLE_DIAM) * Eigen::Vector3f(dNX(v(0)) * NX(fabs(v(1))) * NX(fabs(v(2))),
+                                                    NX(fabs(v(0))) * dNX(v(1)) * NX(fabs(v(2))),
+                                                    NX(fabs(v(0))) * NX(fabs(v(1))) * dNX(v(2)));
+    */
+    return Eigen::Vector3f(dNX(v(0)) * NX(fabs(v(1))) * NX(fabs(v(2))),
                                                     NX(fabs(v(0))) * dNX(v(1)) * NX(fabs(v(2))),
                                                     NX(fabs(v(0))) * NX(fabs(v(1))) * dNX(v(2)));
 }
@@ -202,6 +212,146 @@ __host__ void MPMSolver::bodyCollisions() {
     );
 }
 
+#if ENABLE_IMPLICIT
+__host__ void MPMSolver::computeAr() {
+    Grid *grid_ptr = thrust::raw_pointer_cast(&grids[0]);
+
+    auto computeDeltaElastic = [=] __device__ (const Particle& p) -> Eigen::Matrix3f {
+        float h_inv = 1.0f / PARTICLE_DIAM;
+        Eigen::Vector3i pos((p.position * h_inv).cast<int>());
+        Eigen::Matrix3f f(Eigen::Matrix3f::Zero());
+
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
+                    auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
+                    Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
+                    Eigen::Vector3f gw = gradientWeight(diff);
+                    int grid_idx = getGridIndex(_pos);
+
+                    f += TIMESTEP * grid_ptr[grid_idx].velocity_star * gw.transpose();
+                }
+            }
+        }
+
+        return f * p.def_elastic;
+    };
+
+    auto updateGridDeltaForce = [=] __device__ (const Particle& p, const Eigen::Matrix3f& delta_force) {
+        float h_inv = 1.0f / PARTICLE_DIAM;
+        Eigen::Vector3i pos((p.position * h_inv).cast<int>());
+
+        for (int z = -G2P; z <= G2P; z++) {
+            for (int y = -G2P; y <= G2P; y++) {
+                for (int x = -G2P; x <= G2P; x++) {
+                    auto _pos = pos + Eigen::Vector3i(x, y, z);
+                    if (!IN_GRID(_pos)) continue;
+
+                    Eigen::Vector3f diff = (p.position - (_pos.cast<float>() * PARTICLE_DIAM)) * h_inv;
+                    Eigen::Vector3f gw = gradientWeight(diff);
+                    int grid_idx = getGridIndex(_pos);
+
+                    auto fw = delta_force * gw;
+
+                    atomicAdd(&(grid_ptr[grid_idx].delta_force(0)), fw(0));
+                    atomicAdd(&(grid_ptr[grid_idx].delta_force(1)), fw(1));
+                    atomicAdd(&(grid_ptr[grid_idx].delta_force(2)), fw(2));
+                }
+            }
+        }
+    };
+
+    thrust::for_each(
+        thrust::device,
+        particles.begin(),
+        particles.end(),
+        [=] __device__ (Particle& p) {
+            auto delta_elastic = computeDeltaElastic(p);
+            auto delta_force = p.computeDeltaForce(delta_elastic);
+            updateGridDeltaForce(p, delta_force);
+        }
+    );
+
+    thrust::for_each(
+        thrust::device,
+        grids.begin(),
+        grids.end(),
+        [=] __device__ (Grid& g) {
+            g.ar = g.r - BETA * TIMESTEP * g.delta_force / g.mass;
+        }
+    );
+}
+
+__host__ void MPMSolver::integrateImplicit() {
+    // http://alexey.stomakhin.com/research/siggraph2013_tech_report.pdf
+    // https://nccastaff.bournemouth.ac.uk/jmacey/MastersProjects/MSc15/05Esther/thesisEMdeJong.pdf
+    // initialize some variables
+
+    thrust::for_each(
+        thrust::device,
+        grids.begin(),
+        grids.end(),
+        [=] __device__ (Grid& g) {
+            g.v = g.velocity_star;
+            g.r = g.v;
+        }
+    );
+
+    computeAr();
+
+    thrust::for_each(
+        thrust::device,
+        grids.begin(),
+        grids.end(),
+        [=] __device__ (Grid& g) {
+            g.r = g.v - g.ar;
+            g.p = g.r;
+        }
+    );
+
+    computeAr();
+
+    thrust::for_each(
+        thrust::device,
+        grids.begin(),
+        grids.end(),
+        [=] __device__ (Grid& g) {
+            g.ap = g.ar;
+        }
+    );
+
+    // run conjugate residual method
+    for (int i = 0; i < SOLVE_MAX_ITERATIONS; i++) {
+        thrust::for_each(
+            thrust::device,
+            grids.begin(),
+            grids.end(),
+            [=] __device__ (Grid& g) {
+                float alpha = (g.r).cwiseProduct(g.ar).sum() / (g.ap).cwiseProduct(g.ap).sum();
+                g.v += alpha * g.p;
+                g.rar_tmp = (g.r).cwiseProduct(g.ar).sum();
+                g.r += (-alpha * g.ap);
+            }
+        );
+
+        computeAr();
+
+        thrust::for_each(
+            thrust::device,
+            grids.begin(),
+            grids.end(),
+            [=] __device__ (Grid& g) {
+                float beta = (g.r).cwiseProduct(g.ar).sum() / g.rar_tmp;
+                g.p = g.r + beta * g.p;
+                g.ap = g.ar + beta * g.ap;
+            }
+        );
+    }
+}
+#endif
+
 __host__ void MPMSolver::updateDeformationGradient() {
     Grid *grid_ptr = thrust::raw_pointer_cast(&grids[0]);
 
@@ -302,9 +452,7 @@ __host__ void MPMSolver::updateParticlePositions() {
 }
 
 __host__ void MPMSolver::simulate() {
-
     resetGrid();
-
     if (initial_transfer) {
         initialTransfer();
         computeVolumes();
@@ -315,6 +463,9 @@ __host__ void MPMSolver::simulate() {
     }
     updateVelocities();
     bodyCollisions();
+#if ENABLE_IMPLICIT
+    integrateImplicit();
+#endif
     updateDeformationGradient();
     updateParticleVelocities();
     particleBodyCollisions();
@@ -350,4 +501,28 @@ __host__ void MPMSolver::writeGLBuffer() {
 
     ret = cudaGraphicsUnmapResources(1, &vbo_resource, NULL);
     assert(ret == cudaSuccess);
+}
+
+__host__ void MPMSolver::writeToFile(const std::string& filename) {
+    std::ofstream output(filename, std::ios::binary | std::ios::out);
+    int num_particles = particles.size();
+    float min_bound_x = 0, max_bound_x = GRID_BOUND_X;
+    float min_bound_y = 0, max_bound_y = GRID_BOUND_Y;
+    float min_bound_z = 0, max_bound_z = GRID_BOUND_Z;
+
+    output.write(reinterpret_cast<char *>(&num_particles), sizeof(int));
+    output.write(reinterpret_cast<char *>(&min_bound_x), sizeof(float));
+    output.write(reinterpret_cast<char *>(&max_bound_x), sizeof(float));
+    output.write(reinterpret_cast<char *>(&min_bound_y), sizeof(float));
+    output.write(reinterpret_cast<char *>(&max_bound_y), sizeof(float));
+    output.write(reinterpret_cast<char *>(&min_bound_z), sizeof(float));
+    output.write(reinterpret_cast<char *>(&max_bound_z), sizeof(float));
+
+    thrust::copy(
+        particles.begin(),
+        particles.end(),
+        std::ostream_iterator<Particle>(output)
+    );
+
+    output.close();
 }

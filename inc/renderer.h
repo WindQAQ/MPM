@@ -17,6 +17,9 @@ class Renderer {
     Renderer(int width, int height, int number);
     void render();
     GLuint getSnowVBO();
+    void setOrigin();
+    void setUp();
+    void setFront();
 
   private:
     const GLfloat wall_vertices_[20] = {
@@ -31,6 +34,21 @@ class Renderer {
         0, 1, 2, //
         2, 3, 0
     };
+
+    glm::mat4 origin_camera_ = glm::lookAt(glm::vec3(5.5f, 1.2f, 5.5f),  // camera position
+                                           glm::vec3(0.0f, 1.2f, 0.0f),  // target position
+                                           glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
+    );
+
+    glm::mat4 up_camera_ = glm::lookAt(glm::vec3(0.0f, 6.8f, 0.0f),  // camera position
+                                       glm::vec3(0.0f, 1.2f, 0.0f),  // target position
+                                       glm::vec3(0.0f, 0.0f, -1.0f)   // up vector
+    );
+
+    glm::mat4 front_camera_ = glm::lookAt(glm::vec3(0.0f, 1.2f, 7.0f),  // camera position
+                                          glm::vec3(0.0f, 1.2f, 0.0f),  // target position
+                                          glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
+    );
 
     // window size
     int width_;
@@ -54,7 +72,7 @@ class Renderer {
     float fov_ = 45.0f;
 
     // snow point size;
-    GLfloat radius_ = 0.02f;
+    GLfloat radius_ = 0.015f;
 
     void renderWall();
     void renderFloor();

@@ -14,15 +14,12 @@ Renderer::Renderer(int width, int height, int number)
           number_(number) {
     aspect_ratio_ = static_cast<float>(width_) / height_;
 
-    view_ = glm::lookAt(glm::vec3(4.0f, 1.2f, 4.0f),  // camera position
-                       glm::vec3(0.0f, 1.2f, 0.0f),  // target position
-                       glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
-    );
+    view_ = origin_camera_;
     projection_ = glm::perspective(glm::radians(fov_), static_cast<float>(width_) / height_, 0.1f, 100.0f);
 
     // bind textures on corresponding texture units
     texture1_ = loadTexture("./container.jpg");
-    texture2_ = loadTexture("./doge.jpg");
+    texture2_ = loadTexture("./container.jpg");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1_);
     glActiveTexture(GL_TEXTURE1);
@@ -33,8 +30,6 @@ Renderer::Renderer(int width, int height, int number)
     plane_shader_ = loadShader("./src/plane.vert", "./src/plane.frag");
 
     glUseProgram(plane_shader_);
-
-    glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "view"), 1, GL_FALSE, glm::value_ptr(view_));
     glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "projection"), 1, GL_FALSE, glm::value_ptr(projection_));
 
     glGenVertexArrays(1, &plane_buffers_.vao);
@@ -61,7 +56,6 @@ Renderer::Renderer(int width, int height, int number)
     snow_shader_ = loadShader("./src/snow.vert", "./src/snow.frag");
 
     glUseProgram(snow_shader_);
-    glUniformMatrix4fv(glGetUniformLocation(snow_shader_, "view"), 1, GL_FALSE, glm::value_ptr(view_));
     glUniformMatrix4fv(glGetUniformLocation(snow_shader_, "projection"), 1, GL_FALSE, glm::value_ptr(projection_));
     glUniform1f(glGetUniformLocation(snow_shader_, "radius"), radius_);
     glUniform1f(glGetUniformLocation(snow_shader_, "scale"), width_ / aspect_ratio_ * (1.0f / tanf(fov_ * 0.5f)));
@@ -84,7 +78,7 @@ void Renderer::render() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderWall();
+    // renderWall();
     renderFloor();
     renderSnow();
 }
@@ -94,6 +88,7 @@ void Renderer::renderWall() {
     glUniform1i(glGetUniformLocation(plane_shader_, "texture1"), 1);
     glBindVertexArray(plane_buffers_.vao);
 
+    glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "view"), 1, GL_FALSE, glm::value_ptr(view_));
     glm::mat4 model(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.5f, -1.5f));
     model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
@@ -106,8 +101,9 @@ void Renderer::renderFloor() {
     glUniform1i(glGetUniformLocation(plane_shader_, "texture1"), 0);
     glBindVertexArray(plane_buffers_.vao);
 
+    glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "view"), 1, GL_FALSE, glm::value_ptr(view_));
     glm::mat4 model(1.0f);
-    model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
+    model = glm::scale(model, glm::vec3(5.0f, 5.0f, 5.0f));
     model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(glGetUniformLocation(plane_shader_, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -117,13 +113,24 @@ void Renderer::renderSnow() {
     glUseProgram(snow_shader_);
     glBindVertexArray(snow_buffers_.vao);
 
+    glUniformMatrix4fv(glGetUniformLocation(snow_shader_, "view"), 1, GL_FALSE, glm::value_ptr(view_));
     glm::mat4 model(1.0f);
-    // model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
     glUniformMatrix4fv(glGetUniformLocation(snow_shader_, "model"), 1, GL_FALSE, glm::value_ptr(model));
     glDrawArrays(GL_POINTS, 0, GLsizei(number_));
 }
 
 GLuint Renderer::getSnowVBO() {
     return snow_buffers_.vbo;
+}
+
+void Renderer::setOrigin() {
+    view_ = origin_camera_;
+}
+
+void Renderer::setUp() {
+    view_ = up_camera_;
+}
+
+void Renderer::setFront() {
+    view_ = front_camera_;
 }

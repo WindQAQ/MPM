@@ -25,7 +25,7 @@ render
   width: 800
   height: 600
   samples: 128
-  backclr: <.1, .2, .4>
+  backclr: <.5, .5, .5>
   envmap: sky.png
   outfile: img%04d.png
 
@@ -35,25 +35,25 @@ volume
   extinct: <0.0, 0.0, 0.0>
   range: <0, -1, 3>
   cutoff: <0.005, 0.001, 0.0>
-  smooth: 4
+  smooth: 1
   smoothp: <1.0, -0.2, 0.0>
 
 camera
   angs: <-133, -350, -200>
-  target: <0, 200, 0>
-  dist: 1000
-  fov: 50
+  target: <0, 100, 0>
+  dist: 800
+  fov: 45
 
 light
   angs: <100, -200, 100>
-  target: <0, 100, 0>
+  target: <0, 0, 0>
   dist: 2000
 
 material
   lightwid: 0.9
   shwid: 0.1
   shbias: 0.5
-  ambient: <0.15, 0.15, 0.15>
+  ambient: <0.5, 0.35, 0.5>
   diffuse: <0.9, 0.9, 0.9>
   spec: <0.4, 0.4, 0.4>
   spow: 20
@@ -72,27 +72,27 @@ material
   lightwid: 0.9
   shwid: 0.1
   shbias: 0.5
-  ambient: <0.1, 0.1, 0.1>
-  diffuse: <1.0, 1.0, 1.0>
+  ambient: <0.3, 0.3, 0.3>
+  diffuse: <0.8, 0.8, 0.8>
   spec: <0.0, 0.0, 0.0>
   spow: 20
   env: <0,0,0>
   reflwid: 0.9
   reflbias: 0.5
   reflcolor: <0.8, 0.8, 0.8>
-  refrwid: 0.0 
+  refrwid: 0.0
 
 material
   lightwid: 0.9
   shwid: 0.1
   shbias: 0.5
-  ambient: <0.1, 0.1, 0.1>
-  diffuse: <1.0, 1.0, 1.0>
-  spec: <0.0, 0.0, 0.0>
+  ambient: <0.7, 0.6, 0.5>
+  diffuse: <0.9, 0.9, 0.9>
+  spec: <0.1, 0.1, 0.1>
   spow: 20
   env: <0,0,0>
   reflwid: 0.5
   reflbias: 0.5
-  reflcolor: <0.5, 0.5, 0.5>
-  refrwid: 0.0 
+  reflcolor: <0.2, 0.2, 0.2>
+  refrwid: 0.0
 

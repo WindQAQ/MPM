@@ -26,7 +26,7 @@ CUDALIBS =
 all: $(TARGET)
 
 $(TARGET): $(CPP_OBJS) $(CUDA_OBJS)
-	$(NVCC) -o $@ $^ $(LIBS) $(CUDALIBS)
+	$(NVCC) $(NVCCFLAGS) -o $@ $^ $(LIBS) $(CUDALIBS)
 
 $(OBJ_DIR)/%.cu.o: $(SRC_DIR)/%.cu
 	$(NVCC) $(NVCCFLAGS) $(INCLUDE) -o $@ --device-c $<

@@ -53,6 +53,10 @@ namespace linalg {
 
         return b;
     }
+
+    __host__ __device__ Eigen::Vector3f solve(const Eigen::Matrix3f& a, const Eigen::Vector3f& b) {
+        return inverse(a) * b;
+    }
 }
 
 #endif  // LINALG_H_

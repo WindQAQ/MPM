@@ -85,6 +85,8 @@ public:
     std::string m_pntpath;
     std::string m_pntfile;
     int         m_pntmat;
+    std::string m_pntfilefmt;
+    int         m_pntfiletotal;
 
     bool        m_polyon;        // polygon time series
     std::string m_polypath;
@@ -255,6 +257,9 @@ void Sample::parse_value ( int mode, std::string tag, std::string val )
         if (strEq(tag,"mat")) m_pntmat= strToNum(val);
         if (strEq(tag,"frame")) m_frame = strToNum(val);
         if (strEq(tag,"fstep")) m_fstep = strToNum(val);
+        // our definitions
+        if (strEq(tag,"infile")) m_pntfilefmt = strTrim(val);
+        if (strEq(tag,"total")) m_pntfiletotal = strToNum(val);
         break;
     case M_POLYS:
         if (strEq(tag,"path")) m_polypath = val;
@@ -411,11 +416,12 @@ bool Sample::init()
     m_max_samples = 1;
     m_envfile = "";
     m_outpath = "";
-    m_outfile = "img%04d.png";
+    m_outfile = "img%05d.png";
 
     m_sample = 0;
     m_save_png = true;
     m_render_optix = true;
+    // m_render_optix = false;
     m_smooth = 0;
     m_smoothp.Set(0, 0, 0);
 
@@ -465,9 +471,14 @@ bool Sample::init()
     gvdb.getScene()->SetCutoff(0.005f, 0.001f, 0.0f);
     gvdb.getScene()->SetBackgroundClr(0.1f, 0.2f, 0.4f, 1.0);
 
-    // Parse scene file
     if ( m_render_optix) ClearOptix ();
+
+    // Parse scene file
     parse_scene ( m_infile );
+
+    if (m_render_optix) {
+        optx.InitializeOptix(m_w, m_h);
+    }
 
     // Add render buffer
     nvprintf("Output buffer: %d x %d\n", m_w, m_h);
@@ -533,15 +544,19 @@ void Sample::load_points ( std::string pntpath, std::string pntfile, int frame )
     sprintf ( pntfmt, "%s%s", m_pntpath.c_str(), m_pntfile.c_str() );
     sprintf ( srcfile, pntfmt, frame );
 
-    if ( pntpath.empty() )  {
-        gvdb.FindFile ( srcfile, filepath );
-    } else {
-        sprintf ( filepath, "%s", srcfile );
-    }
+    sprintf (filepath, m_pntfilefmt.c_str(), frame);
+
+    // DEBUG
+    // std::cerr << "filepath = " << filepath << std::endl;
+    // std::cerr << "frame     = " << frame << std::endl;
+
+    // if ( pntpath.empty() )  {
+    //     gvdb.FindFile ( srcfile, filepath );
+    // } else {
+    //     sprintf ( filepath, "%s", srcfile );
+    // }
 
     nvprintf ( "Load points from %s...", filepath );
-
-    float buf[3];
 
     // Read # of points
     m_numpnts = 0;
@@ -555,26 +570,24 @@ void Sample::load_points ( std::string pntpath, std::string pntfile, int frame )
         printf("Cannot open file: %s\n", filepath);
         exit(-1);
     }
-    fread(&m_numpnts, sizeof(int), 1, fph);        // 7*4 = 28 byte header
-    fread(&wMin.x, sizeof(float), 1, fph);
-    fread(&wMax.x, sizeof(float), 1, fph);
-    fread(&wMin.y, sizeof(float), 1, fph);
-    fread(&wMax.y, sizeof(float), 1, fph);
-    fread(&wMin.z, sizeof(float), 1, fph);
-    fread(&wMax.z, sizeof(float), 1, fph);
+    size_t ker = fread(&m_numpnts, sizeof(int), 1, fph);        // 7*4 = 28 byte header
+    ker = fread(&wMin.x, sizeof(float), 1, fph);
+    ker = fread(&wMax.x, sizeof(float), 1, fph);
+    ker = fread(&wMin.y, sizeof(float), 1, fph);
+    ker = fread(&wMax.y, sizeof(float), 1, fph);
+    ker = fread(&wMin.z, sizeof(float), 1, fph);
+    ker = fread(&wMax.z, sizeof(float), 1, fph);
 
     nvprintf("\n%d %f %f %f %f %f %f\n", m_numpnts, wMin.x, wMin.y, wMin.z, wMax.x, wMax.y, wMax.z);
 
     // Allocate memory for points
-    float outbuf[3];
+    unsigned short outbuf[3];
     PERF_PUSH("  Buffer alloc");
-    gvdb.AllocData(m_pnt1, m_numpnts, sizeof(float) * 3, true);
+    gvdb.AllocData(m_pnt1, m_numpnts, sizeof(unsigned short) * 3, true);
     gvdb.AllocData(m_pnts, m_numpnts, sizeof(Vector3DF), false);
     PERF_POP();
 
-    std::cout << "sizeof(Vector3DF) = " << sizeof(Vector3DF) << std::endl;
-
-    fread (m_pnt1.cpu, 3 * sizeof(float), m_numpnts, fph);
+    ker = fread (m_pnt1.cpu, 3 * sizeof(unsigned short), m_numpnts, fph);
     PERF_POP();
     PERF_PUSH("Commit");
     gvdb.CommitData(m_pnt1);        // Commit to GPU
@@ -582,8 +595,8 @@ void Sample::load_points ( std::string pntpath, std::string pntfile, int frame )
 
     // Convert format and transform
     PERF_PUSH ( "  Convert" );
-    Vector3DF nMin(712, 0, 509);
-    gvdb.ConvertAndTransform(m_pnt1, 4, m_pnts, 4, m_numpnts, wMin, Vector3DF(200,200,200), Vector3DF(0,0,0), Vector3DF(m_renderscale,m_renderscale,m_renderscale));
+    Vector3DF wdelta((wMax.x - wMin.x)/65535.0f, (wMax.y - wMin.y)/65535.0f, (wMax.z - wMin.z)/65535.0f);
+    gvdb.ConvertAndTransform(m_pnt1, 2, m_pnts, 4, m_numpnts, wMin, wdelta, Vector3DF(0, 0, 0), Vector3DF(m_renderscale, m_renderscale, m_renderscale));
     PERF_POP ();
 
     // Set points for GVDB
@@ -615,6 +628,13 @@ void Sample::load_polys ( std::string polypath, std::string polyfile, int frame,
     // load model
     gvdb.getScene()->LoadModel ( m, fpath, pscale, poffs.x, poffs.y, poffs.z );
     gvdb.CommitGeometry (0);
+
+    if (!m_render_optix) {
+        Matrix4F xform;
+        xform.Identity();
+        gvdb.SurfaceVoxelizeGL( 0, m, &xform );
+        gvdb.UpdateApron();
+    }
 
     nvprintf ( " Done.\n" );
 }
@@ -732,43 +752,45 @@ void Sample::display()
     // Render frame
     render_frame();
 
-    if (m_sample % 8 == 0 && m_sample > 0) {
-        int pct = (m_sample * 100) / m_max_samples;
-        nvprintf("%d%%%% ", pct);
-    }
+    // if (m_sample % 8 == 0 && m_sample > 0) {
+    //     int pct = (m_sample * 100) / m_max_samples;
+    //     nvprintf("%d%%%% ", pct);
+    // }
 
     if (++m_sample >= m_max_samples) {
         m_sample = 0;
 
-        nvprintf("100%%%%\n");
+        // nvprintf("100%%%%\n");
 
-        // if (m_save_png && m_render_optix) {
-        //     // Save current frame to PNG
-        //     char png_name[1024];
-        //     char pfmt[1024];
-        //     sprintf(pfmt, "%s%s", m_outpath.c_str(), m_outfile.c_str());
-        //     sprintf(png_name, pfmt, m_frame);
-        //     std::cout << "Save png to " << png_name << " ...";
-        //     optx.SaveOutput(png_name);
-        //     std::cout << " Done\n";
-        // }
+        if (m_save_png && m_render_optix) {
+            // Save current frame to PNG
+            char png_name[1024];
+            // char pfmt[1024];
+            // sprintf(pfmt, "%s%s", m_outpath.c_str(), m_outfile.c_str());
+            sprintf(png_name, m_outfile.c_str(), m_frame);
+            std::cout << "Save png to " << png_name << " ...";
+            optx.SaveOutput(png_name);
+            std::cout << " Done\n";
+        }
 
-        // m_frame += m_fstep;
-        m_frame++;
+        m_frame += m_fstep;
+        // m_frame++;
 
-        // if ( m_pnton )
-        //     load_points ( m_pntpath, m_pntfile, m_frame );
+        if ( m_frame < m_pntfiletotal ) {
+            std::cerr << "load_points" << std::endl;
+            load_points ( m_pntpath, m_pntfile, m_frame );
+            render_update();
+        }
 
         // if ( m_polyon ) {
         //     m_pframe += m_pfstep;
         //     load_polys ( m_polypath, m_polyfile, m_pframe, m_pscale, m_poffset, m_polymat );
         //     if (m_render_optix) optx.UpdatePolygons ();
         // }
-        // render_update();
 
         if (m_save_png) {
             // char png_name[1024];
-            // sprintf(png_name, "saved_frame_%04d.png", m_frame);
+            // sprintf(png_name, "saved_frame_%05d.png", m_frame);
             // std::cout << "Save png to " << png_name << " ...";
             // save_frame(png_name);
             // std::cout << " Done." << std::endl;
@@ -813,10 +835,10 @@ void Sample::motion(int x, int y, int dx, int dy)
     }
 
     if (m_sample == 0) {
-        nvprintf("cam ang: %f %f %f\n", cam->getAng().x, cam->getAng().y, cam->getAng().z);
-        nvprintf("cam dst: %f\n", cam->getOrbitDist() );
-        nvprintf("cam to:  %f %f %f\n", cam->getToPos().x, cam->getToPos().y, cam->getToPos().z );
-        nvprintf("lgt ang: %f %f %f\n\n", lgt->getAng().x, lgt->getAng().y, lgt->getAng().z);
+        // nvprintf("cam ang: %f %f %f\n", cam->getAng().x, cam->getAng().y, cam->getAng().z);
+        // nvprintf("cam dst: %f\n", cam->getOrbitDist() );
+        // nvprintf("cam to:  %f %f %f\n", cam->getToPos().x, cam->getToPos().y, cam->getToPos().z );
+        // nvprintf("lgt ang: %f %f %f\n\n", lgt->getAng().x, lgt->getAng().y, lgt->getAng().z);
     }
 }
 
@@ -830,7 +852,7 @@ void Sample::mouse ( NVPWindow::MouseButton button, NVPWindow::ButtonAction stat
 
 int sample_main ( int argc, const char** argv )
 {
-    return sample_obj.run ( "GVDB Sparse Volumes - gPointCloud Sample", "pointcloud", argc, argv, 1280, 760, 4, 5, 30 );
+    return sample_obj.run ( "GVDB Sparse Volumes - gPointCloud Sample", "pointcloud", argc, argv, 1280, 760, 4, 5, -1 );
 }
 
 void sample_print( int argc, char const *argv) {}

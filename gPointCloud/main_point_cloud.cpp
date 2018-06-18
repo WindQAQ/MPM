@@ -106,8 +106,6 @@ public:
 
     bool        m_key;
     bool        m_info;
-
-    int         m_io_method;
 };
 
 Sample sample_obj;
@@ -241,8 +239,9 @@ Sample::Sample()
     m_frame = -1;
     m_key = false;
     m_renderscale = 0.0;
-    m_infile = "../assets/two_walls.scn";
-    m_io_method = 1;
+    m_infile = "../assets/field.scn";
+    m_save_png = true;
+    m_render_optix = true;
 }
 
 void Sample::parse_value ( int mode, std::string tag, std::string val )
@@ -371,36 +370,7 @@ void Sample::parse_scene ( std::string fname )
     fclose ( fp );
 }
 
-void Sample::on_arg(std::string arg, std::string val)
-{
-    if (arg.compare("-in") == 0) {
-        m_infile = val;
-        nvprintf("input: %s\n", m_infile.c_str());
-    }
-
-    if (arg.compare("-frame") == 0) {
-        m_frame = strToNum(val);
-        nvprintf("frame: %d\n", m_frame);
-    }
-
-    if (arg.compare("-key") == 0)
-        m_key = true;
-
-    if (arg.compare("-info") == 0) {
-        nvprintf("print gvdb info\n" );
-        m_info = true;
-    }
-
-    if (arg.compare("-scale") == 0) {
-        m_renderscale = strToNum(val);
-        nvprintf("render scale: %f\n", m_renderscale);
-    }
-
-    if (arg.compare("-io") == 0) {
-        m_io_method = strToNum(val);
-        nvprintf("io method: %d\n", m_io_method);
-    }
-}
+void Sample::on_arg(std::string arg, std::string val) {}
 
 bool Sample::init()
 {
@@ -419,9 +389,6 @@ bool Sample::init()
     m_outfile = "img%05d.png";
 
     m_sample = 0;
-    m_save_png = true;
-    m_render_optix = true;
-    // m_render_optix = false;
     m_smooth = 0;
     m_smoothp.Set(0, 0, 0);
 
@@ -835,14 +802,43 @@ void Sample::motion(int x, int y, int dx, int dy)
     }
 
     if (m_sample == 0) {
-        // nvprintf("cam ang: %f %f %f\n", cam->getAng().x, cam->getAng().y, cam->getAng().z);
-        // nvprintf("cam dst: %f\n", cam->getOrbitDist() );
-        // nvprintf("cam to:  %f %f %f\n", cam->getToPos().x, cam->getToPos().y, cam->getToPos().z );
-        // nvprintf("lgt ang: %f %f %f\n\n", lgt->getAng().x, lgt->getAng().y, lgt->getAng().z);
+        nvprintf("cam ang: %f %f %f\n", cam->getAng().x, cam->getAng().y, cam->getAng().z);
+        nvprintf("cam dst: %f\n", cam->getOrbitDist() );
+        nvprintf("cam to:  %f %f %f\n", cam->getToPos().x, cam->getToPos().y, cam->getToPos().z );
+        nvprintf("lgt ang: %f %f %f\n\n", lgt->getAng().x, lgt->getAng().y, lgt->getAng().z);
     }
 }
 
-void Sample::keyboardchar(unsigned char key, int mods, int x, int y) {}
+void Sample::keyboardchar(unsigned char key, int mods, int x, int y) {
+    Camera3D* cam = gvdb.getScene()->getCamera();
+    Vector3DF val = cam->getToPos();
+    switch(key) {
+    case 'q':
+        cam->setToPos(val.x - 5.0, val.y, val.z);
+        m_sample = 0;
+        break;
+    case 'w':
+        cam->setToPos(val.x + 5.0, val.y, val.z);
+        m_sample = 0;
+        break;
+    case 'a':
+        cam->setToPos(val.x, val.y - 5.0, val.z);
+        m_sample = 0;
+        break;
+    case 's':
+        cam->setToPos(val.x, val.y + 5.0, val.z);
+        m_sample = 0;
+        break;
+    case 'z':
+        cam->setToPos(val.x, val.y, val.z - 5.0);
+        m_sample = 0;
+        break;
+    case 'x':
+        cam->setToPos(val.x, val.y, val.z + 5.0);
+        m_sample = 0;
+        break;
+    }
+}
 
 void Sample::mouse ( NVPWindow::MouseButton button, NVPWindow::ButtonAction state, int mods, int x, int y)
 {
@@ -852,6 +848,21 @@ void Sample::mouse ( NVPWindow::MouseButton button, NVPWindow::ButtonAction stat
 
 int sample_main ( int argc, const char** argv )
 {
+    // parse command-line arguments
+    for (int i = 0; i < argc; i++) {
+        std::string args(argv[i]);
+        if (args == "-in") {
+            sample_obj.m_infile = std::string(argv[i+1]);
+            i++;
+        }
+        else if (args == "-nooptix") {
+            sample_obj.m_render_optix = false;
+        }
+        else if (args == "-nosave") {
+            sample_obj.m_save_png = false;
+        }
+    }
+
     return sample_obj.run ( "GVDB Sparse Volumes - gPointCloud Sample", "pointcloud", argc, argv, 1280, 760, 4, 5, -1 );
 }
 

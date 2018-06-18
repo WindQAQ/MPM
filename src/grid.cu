@@ -21,7 +21,7 @@ __host__ __device__ void Grid::reset() {
 __host__ __device__ void Grid::updateVelocity() {
     if (mass > 0.0f) {
         float inv_mass = 1.0f / mass;
-        force(1) += (mass * GRAVITY);
+        force += (mass * GRAVITY);
         velocity *= inv_mass;
         velocity_star = velocity + TIMESTEP * inv_mass * force;
     }
@@ -51,7 +51,6 @@ __host__ __device__ void Grid::applyBoundaryCollision() {
 
             if (vn >= 0.0f) continue;
 
-            velocity_star(i) = 0.0;
             for (int j = 0; j < 3; j++) {
                 if (j != i) {
                     velocity_star(j) *= STICKY_WALL;

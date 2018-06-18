@@ -60,7 +60,7 @@ __host__ __device__ void Particle::updateDeformationGradient(const Eigen::Matrix
 
     // clip values
     auto e = s.diagonal().array();
-    e = e.min(CRIT_STRETCH).max(CRIT_COMPRESS);
+    e = e.min(1 + CRIT_STRETCH).max(1 - CRIT_COMPRESS);
 
 #if ENABLE_IMPLICIT
     polar_r = u * v.transpose();
@@ -101,7 +101,6 @@ __host__ __device__ void Particle::applyBoundaryCollision() {
 
             if (vn >= 0.0f) continue;
 
-            velocity(i) = 0.0f;
             for (int j = 0; j < 3; j++) {
                 if (j != i) {
                     velocity(j) *= STICKY_WALL;

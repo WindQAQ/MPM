@@ -1,6 +1,9 @@
 points
   file: points.dat
+  infile: ../points/points_%05d.dat
+  total: 1400
   frame: 0
+  fstep: 4
   mat: 0
 
 model
@@ -24,10 +27,10 @@ model
 render
   width: 800
   height: 600
-  samples: 128
+  samples: 48
   backclr: <.5, .5, .5>
   envmap: sky.png
-  outfile: img%04d.png
+  outfile: saved_frame_%05d.png
 
 volume
   scale: 1.0
@@ -39,8 +42,8 @@ volume
   smoothp: <1.0, -0.2, 0.0>
 
 camera
-  angs: <-133, -350, -200>
-  target: <0, 100, 0>
+  angs: <-160, -350, -200>
+  target: <100, 75, 0>
   dist: 800
   fov: 45
 
@@ -53,7 +56,7 @@ material
   lightwid: 0.9
   shwid: 0.1
   shbias: 0.5
-  ambient: <0.5, 0.35, 0.5>
+  ambient: <0.5, 0.5, 0.5>
   diffuse: <0.9, 0.9, 0.9>
   spec: <0.4, 0.4, 0.4>
   spow: 20
@@ -62,7 +65,7 @@ material
   reflbias: 0.5
   reflcolor: <0.5, 0.5, 0.5>
   refrwid: 0.05
-  refrcolor: <0.2, 0.2, 0.2>
+  refrcolor: <0.4, 0.4, 0.4>
   refrior: 1.33
   reframt: 0.8
   refroffs: 100

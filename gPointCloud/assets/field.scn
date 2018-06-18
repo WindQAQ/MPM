@@ -1,7 +1,7 @@
 points
   file: points.dat
   infile: ../points/points_%05d.dat
-  total: 5368
+  total: 4395
   frame: 0
   fstep: 1
   mat: 0
@@ -13,33 +13,15 @@ model
   mat: 1
 
 model
-  file: wall.obj
-  scale: 1.0
-  offset: <0,0,0>
-  mat: 2
-
-model
-  file: wall2.obj
-  scale: 1.0
-  offset: <0,0,0>
-  mat: 2
-
-model
-  file: gpgpu.obj
-  scale: 0.5
-  offset: <12,6,-3>
-  mat: 3
-
-model
   file: 2018.obj
-  scale: 1.0
-  offset: <12,20,30>
-  mat: 3
+  scale: 1.5
+  offset: <270,23,-130>
+  mat: 2
 
 render
   width: 800
   height: 600
-  samples: 64
+  samples: 48
   backclr: <.5, .5, .5>
   envmap: sky.png
   outfile: saved_frame_%05d.png
@@ -54,9 +36,9 @@ volume
   smoothp: <1.0, -0.2, 0.0>
 
 camera
-  angs: <-160, -350, -200>
-  target: <75, 75, 0>
-  dist: 600
+  angs: <3, -2, 160>
+  target: <140, 55, 310>
+  dist: 500
   fov: 45
 
 light
@@ -68,7 +50,7 @@ material
   lightwid: 0.9
   shwid: 0.1
   shbias: 0.5
-  ambient: <0.5, 0.5, 0.5>
+  ambient: <0.4, 0.4, 0.4>
   diffuse: <1.0, 0.1, 1.0>
   spec: <0.0, 0.0, 0.0>
   spow: 20
@@ -76,8 +58,8 @@ material
   reflwid: 0.5
   reflbias: 0.5
   reflcolor: <1.0, 1.0, 1.0>
-  refrwid: 0.01
-  refrcolor: <0.8, 0.8, 0.8>
+  refrwid: 0.001
+  refrcolor: <0.6, 0.6, 0.6>
   refrior: 1.33
   reframt: 0.8
   refroffs: 100
@@ -101,22 +83,8 @@ material
   lightwid: 0.9
   shwid: 0.1
   shbias: 0.5
-  ambient: <0.7, 0.6, 0.5>
-  diffuse: <0.9, 0.9, 0.9>
-  spec: <0.1, 0.1, 0.1>
-  spow: 20
-  env: <0,0,0>
-  reflwid: 0.5
-  reflbias: 0.5
-  reflcolor: <0.2, 0.2, 0.2>
-  refrwid: 0.0
-
-material
-  lightwid: 0.9
-  shwid: 0.1
-  shbias: 0.5
-  ambient: <0.3, 0.6, 0.9>
-  diffuse: <0.3, 0.6, 0.9>
+  ambient: <0.3, 0.5, 0.7>
+  diffuse: <0.3, 0.5, 0.7>
   spec: <0.5, 0.5, 0.5>
   spow: 50
   env: <0,0,0>

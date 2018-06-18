@@ -20,6 +20,7 @@ class Renderer {
     void setOrigin();
     void setUp();
     void setFront();
+    void setSide();
 
   private:
     const GLfloat wall_vertices_[20] = {
@@ -48,6 +49,11 @@ class Renderer {
     glm::mat4 front_camera_ = glm::lookAt(glm::vec3(0.0f, 1.2f, 7.0f),  // camera position
                                           glm::vec3(0.0f, 1.2f, 0.0f),  // target position
                                           glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
+    );
+
+    glm::mat4 side_camera_ = glm::lookAt(glm::vec3(7.0f, 1.2f, 0.0f),  // camera position
+                                         glm::vec3(0.0f, 1.2f, 0.0f),  // target position
+                                         glm::vec3(0.0f, 1.0f, 0.0f)   // up vector
     );
 
     // window size

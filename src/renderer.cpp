@@ -134,3 +134,7 @@ void Renderer::setUp() {
 void Renderer::setFront() {
     view_ = front_camera_;
 }
+
+void Renderer::setSide() {
+    view_ = side_camera_;
+}

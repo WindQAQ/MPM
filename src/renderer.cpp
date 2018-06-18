@@ -18,8 +18,8 @@ Renderer::Renderer(int width, int height, int number)
     projection_ = glm::perspective(glm::radians(fov_), static_cast<float>(width_) / height_, 0.1f, 100.0f);
 
     // bind textures on corresponding texture units
-    texture1_ = loadTexture("./container.jpg");
-    texture2_ = loadTexture("./container.jpg");
+    texture1_ = loadTexture("./images/container.jpg");
+    texture2_ = loadTexture("./images/container.jpg");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1_);
     glActiveTexture(GL_TEXTURE1);

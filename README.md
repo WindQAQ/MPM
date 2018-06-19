@@ -47,6 +47,13 @@ For more details, please go to our [Project Page](https://windqaq.github.io/MPM/
 - [JAGJ10 - Snow](https://github.com/JAGJ10/Snow)
 - [utilForever - SnowSimulation](https://github.com/utilForever/SnowSimulation)
 
+##### Tools
+
+- [Learn OpenGL](https://learnopengl.com/)
+- [GLFW](http://www.glfw.org/)
+- [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/index.html)
+- [stb_image](https://github.com/nothings/stb)
+
 ### Contact
 
 Issues and pull requests are welcomed! Feel free to contact project owner [Tzu-Wei Sung](mailto:windqaq@gmail.com), or contributors [Yist Lin](mailto:yishen992@gmail.com) and [Rikiu Chen](mailto:jcly.rikiu@gmail.com).

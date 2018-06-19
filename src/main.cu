@@ -8,6 +8,8 @@
 #include "constant.h"
 #include "particle.h"
 #include "mpm_solver.h"
+#include "point_loader.h"
+#include "parser.h"
 
 #include <glad/glad.h>
 
@@ -31,209 +33,56 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 }
 
-void createSphere(std::vector<Particle>& particles,
-                  const Eigen::Vector3i& center, const float radius,
-                  const Eigen::Vector3f& velocity, const float mass,
-                  const float lambda, const float mu,
-                  const int sample_rate=1) {
+int main(int argc, const char *argv[]) {
 
-    float sphere_radius = PARTICLE_DIAM * radius / 2.0;
+    auto vm = parser::parseArgs(argc, argv);
 
-    for (int x = 0; x < GRID_BOUND_X; x++) {
-        for (int y = 0; y < GRID_BOUND_Y; y++) {
-            for (int z = 0; z < GRID_BOUND_Z; z++) {
-                for (int s = 0; s < sample_rate; s++) {
-                    float r1 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    float r2 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    float r3 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    Eigen::Vector3f jitter(r1, r2, r3);
-                    jitter.array() *= PARTICLE_DIAM;
+    std::vector<Particle> particles;
 
-                    Eigen::Vector3f pos = Eigen::Vector3i(x, y, z).cast<float>() * PARTICLE_DIAM + jitter;
+    if (vm.count("model")) {
+        auto model_vec = parser::parseModel(vm["model"].as<std::string>());
 
-                    if ((pos - center.cast<float>() * PARTICLE_DIAM).norm() < sphere_radius) {
-                        particles.push_back(
-                            Particle(
-                                pos,
-                                velocity,
-                                mass,
-                                lambda,
-                                mu
-                            )
-                        );
-                    }
-                }
-            }
-        }
-    }
-}
-
-void createCuboid(std::vector<Particle>& particles,
-                  const Eigen::Vector3i& corner, const Eigen::Vector3i& dims,
-                  const Eigen::Vector3f& velocity, const float mass,
-                  const float lambda, const float mu) {
-
-
-    for (int x = 0; x < dims(0); x++) {
-        for (int y = 0; y < dims(1); y++) {
-            for (int z = 0; z < dims(2); z++) {
-                float r1 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                float r2 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                float r3 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                Eigen::Vector3f jitter(r1, r2, r3);
-                jitter.array() *= PARTICLE_DIAM;
-
-                Eigen::Vector3f pos = (corner.cast<float>() + Eigen::Vector3i(x, y, z).cast<float>()) * PARTICLE_DIAM + jitter;
-
+        for (const auto& config: model_vec) {
+            auto model = PointLoader(config.path, config.translate * PARTICLE_DIAM, config.scale);
+            for (const auto& pos: model.positions) {
                 particles.push_back(
                     Particle(
                         pos,
-                        velocity,
-                        mass,
-                        lambda,
-                        mu
+                        config.velocity,
+                        config.mass,
+                        config.hardening,
+                        config.young,
+                        config.poisson,
+                        config.compression,
+                        config.stretch
                     )
                 );
             }
         }
     }
-}
 
-void createAlphabet(std::vector<Particle>& particles,
-                    const Eigen::Vector3i& corner,
-                    const Eigen::Vector3f& velocity,
-                    const float mass, const float lambda, const float mu,
-                    const char alphabet, const int scale=5, const int sample_rate=1) {
-    const char G[7][6] = {" *** ", "*   *", "*    ", "*    ", "*  **", "*   *", " *** "};
-    const char P[7][6] = {"**** ", "*   *", "*   *", "**** ", "*    ", "*    ", "*    "};
-    const char U[7][6] = {"*   *", "*   *", "*   *", "*   *", "*   *", "*   *", " *** "};
-    for (int y = 0; y < 7 * scale; y++) {
-        for (int x = 0; x < 5 * scale; x++) {
-            bool cont = false;
-            switch (alphabet) {
-            case 'G': if (G[6 - y / scale][4 - x / scale] == ' ') cont = true; break;
-            case 'P': if (P[6 - y / scale][4 - x / scale] == ' ') cont = true; break;
-            case 'U': if (U[6 - y / scale][4 - x / scale] == ' ') cont = true; break;
-            default: cont = true;
-            }
-
-            if (cont) continue;
-
-            for (int z = 0; z < 10; z++) {
-                for (int s = 0; s < sample_rate; s++) {
-                    float r1 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    float r2 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    float r3 = 1e-3 + static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                    Eigen::Vector3f jitter(r1, r2, r3);
-                    jitter.array() *= PARTICLE_DIAM;
-
-                    Eigen::Vector3f pos = (corner.cast<float>() + Eigen::Vector3i(x, y, z).cast<float>()) * PARTICLE_DIAM + jitter;
-
-                    particles.push_back(
-                        Particle(
-                            pos,
-                            velocity,
-                            mass,
-                            lambda,
-                            mu
-                        )
-                    );
-                }
-            }
-        }
-    }
-}
-
-int main(int argc, char *argv[]) {
-
-    // configure
-    bool save_frame = false;
-
-    // read command-line arguments
-    for (int i = 1; i < argc; i++) {
-        std::string args(argv[i]);
-        if (args.find("-save_frame") != std::string::npos) save_frame = true;
-    }
-
-    std::vector<Grid> grids;
-    std::vector<Particle> particles;
-
-    // reserve space
-    grids.reserve(GRID_BOUND_X * GRID_BOUND_Y * GRID_BOUND_Z);
-    particles.reserve(20 * 20 * 21);
-
-    // generate grids
     /*
-    for (int x = 0; x < GRID_BOUND_X; x++)
-        for (int y = 0; y < GRID_BOUND_Y; y++)
-            for (int z = 0; z < GRID_BOUND_Z; z++) {
-                grids.push_back(Grid(Eigen::Vector3i(x, y, z)));
-            }
+    {
+        // two balls
+        // TIMESTEP 1e-4
+        // HARDENING 10.0f
+        // CRIT_COMPRESS 1.9e-2
+        // CRIT_STRETCH 7.5e-3
+        // ALPHA 0.95f
+        // PATICLE_DIAM 0.010
+        // STICKY_WALL 0.9
+        // FRICTION 1.0
+        // DENSITY 400
+        // YOUNG 1.4e5
+        // POSSION 0.2
+        const int height = 70;
+        Eigen::Vector3i center(70, height, 80);
+        createSphere(particles, center, 20, Eigen::Vector3f(0.0f, 0.0f, -3.0f), mass, lambda, mu, 4);
+        center(2) = 30;
+        createSphere(particles, center, 7, Eigen::Vector3f(0.0f, 0.0f, 15.0f), mass, lambda, mu, 50);
+    }
     */
 
-    float lambda = LAMBDA, mu = MU;
-
-    Eigen::Vector3i center(70, 50, 70);
-
-    // two balls
-    // createSphere(particles, center, 20, Eigen::Vector3f(0.0f, 0.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 1);
-    // center(1) = (int) (70 / 1.5);
-    // center(2) = 70 / 4;
-    // createSphere(particles, center, 5, Eigen::Vector3f(0.0f, 0.0f, 5.0f), pow(PARTICLE_DIAM / 2, 3) *  3.14 * 4 / 3 * DENSITY, lambda, mu, 30);
-
-    // vertical
-    // center(1) = 40;
-    // createSphere(particles, center, 20, Eigen::Vector3f(0.0f, -5.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 50);
-
-    // cuboid
-    // Eigen::Vector3i corner(70, 20, 70), dims(10, 50, 10);
-    // createCuboid(particles, corner, dims, Eigen::Vector3f(0.0f, 0.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu);
-
-    // pyramid
-    // for (int y = 0; y < 40; y++) {
-    //      for (int x = 0; x < 40 - y; x++) {
-    //          for (int z = 0; z < 40 - y; z++) {
-
-    //              Eigen::Vector3f pos(40 - x, y, 40 - z);
-    //              pos += Eigen::Vector3f(50, 20, 50);
-    //              pos.array() *= PARTICLE_DIAM;
-
-    //              particles.push_back(
-    //                  Particle(
-    //                      pos,
-    //                      Eigen::Vector3f(0.0f, -5.0f, 0.0f),
-    //                      pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY,
-    //                      lambda,
-    //                      mu
-    //                  )
-    //              );
-    //          }
-    //      }
-    //  }
-
-    {
-        Eigen::Vector3i corner(165, 50, 70);
-        createAlphabet(particles, corner, Eigen::Vector3f(0.0f, -10.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 'G', 5, 15);
-    }
-    {
-        Eigen::Vector3i corner(125, 50, 70);
-        createAlphabet(particles, corner, Eigen::Vector3f(0.0f, -10.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 'P', 5, 15);
-    }
-    {
-        Eigen::Vector3i corner(85, 50, 70);
-        createAlphabet(particles, corner, Eigen::Vector3f(0.0f, -10.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 'G', 5, 15);
-    }
-    {
-        Eigen::Vector3i corner(45, 50, 70);
-        createAlphabet(particles, corner, Eigen::Vector3f(0.0f, -10.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 'P', 5, 15);
-    }
-    {
-        Eigen::Vector3i corner(5, 50, 70);
-        createAlphabet(particles, corner, Eigen::Vector3f(0.0f, -10.0f, 0.0f), pow(PARTICLE_DIAM / 2, 3) * 3.14 * 4 / 3 * DENSITY, lambda, mu, 'U', 5, 15);
-    }
-
-
-    std::cout << "number of grids: " << grids.size() << ", number of bytes in grids: " << grids.size() * sizeof(Grid) << std::endl;
     std::cout << "number of particles: " << particles.size() << ", number of bytes in particles: " << particles.size() * sizeof(Particle) << std::endl;
 
     MPMSolver mpm_solver(particles);
@@ -241,13 +90,8 @@ int main(int argc, char *argv[]) {
     auto ret = cudaGetLastError();
     assert(ret == cudaSuccess);
 
-    // grids.clear();
-    // particles.clear();
-
     ret = cudaGetLastError();
     assert(ret == cudaSuccess);
-
-    // cudaDeviceSynchronize();
 
     // glfw: initialize and configure
     if (!glfwInit()) return EXIT_FAILURE;
@@ -298,10 +142,12 @@ int main(int argc, char *argv[]) {
             renderer.setUp();
         if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
             renderer.setFront();
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            renderer.setSide();
 
         std::cout << "step: " << step << std::endl;
 
-        if (save_frame) {
+        if (vm["save"].as<bool>()) {
             char pnt_fname[128];
             sprintf(pnt_fname, "points_%05d.dat", step);
             mpm_solver.writeToFile(pnt_fname);

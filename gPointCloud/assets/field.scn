@@ -1,9 +1,9 @@
 points
   file: points.dat
   infile: ../points/points_%05d.dat
-  total: 4395
+  total: 5025
   frame: 0
-  fstep: 1
+  fstep: 250
   mat: 0
 
 model
@@ -19,21 +19,21 @@ model
   mat: 2
 
 render
-  width: 800
-  height: 600
-  samples: 48
+  width: 1200
+  height: 800
+  samples: 128
   backclr: <.5, .5, .5>
   envmap: sky.png
   outfile: saved_frame_%05d.png
 
 volume
-  scale: 1.0
+  scale: 2.0
   steps: <.25, .25, .25>
   extinct: <0.0, 0.0, 0.0>
   range: <0, -1, 3>
   cutoff: <0.005, 0.001, 0.0>
-  smooth: 1
-  smoothp: <1.0, -0.2, 0.0>
+  smooth: 0
+  smoothp: <1.5, -0.2, 1.0>
 
 camera
   angs: <3, -2, 160>

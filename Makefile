@@ -16,7 +16,7 @@ CPP_OBJS  = $(addprefix $(OBJ_DIR)/, $(notdir $(CPP_SRCS:.cpp=.o)))
 CPPFLAGS = -g -std=c++17 -O2
 NVCCFLAGS = -g -std=c++11 -O2 --expt-extended-lambda --expt-relaxed-constexpr -DTHRUST_DEBUG -arch=sm_30 -Wno-deprecated-declarations -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored -rdc=true
 INCLUDE = -I. -I$(INC_DIR) -I./third_party $(shell pkg-config --cflags glfw3) -I/usr/include/
-LIBS = -lm -Xlinker="$(shell pkg-config --libs glfw3) $(shell pkg-config --static --libs gl)"
+LIBS = -lm -lboost_program_options -Xlinker="$(shell pkg-config --libs glfw3) $(shell pkg-config --static --libs gl)"
 # LIBS = -lm $(shell pkg-config --libs glfw3) $(shell pkg-config --static --libs gl)
 # CUDALIBS = -L/usr/local/cuda/lib64 -lcuda -lcudart
 CUDALIBS =

@@ -17,7 +17,7 @@ namespace parser {
                     float _hardening, float _young, float _poisson,
                     float _compression, float _stretch)
             : path(_path), translate(_translate), scale(_scale),
-              mass(_mass), velocity(velocity),
+              mass(_mass), velocity(_velocity),
               hardening(_hardening), young(_young), poisson(_poisson),
               compression(_compression), stretch(_stretch)
         {}

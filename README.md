@@ -1,8 +1,8 @@
 # MPM Simulation & Voxels Rendering
 
-![snow balls collision](images/two_snowballs_p6146_g200.png)
+![gpgpu free fall](images/gpgpu_free_fall_01250_1200x800.png)
 
-We try to simulate fluid-like materials, such as snow and sand, with material point method. MPM is implemented in C++ with CUDA support. And OpenGL is used for real-time result viewing. Besides, for high quality rendering, we use NVIDIA GVDB + OptiX Ray Tracing Engine.
+We model and simulate fluid-like materials, such as snow and sand, with material point method. MPM is implemented in C++ with CUDA support. And OpenGL is used for real-time result viewing. Besides, for high quality rendering, we use NVIDIA GVDB + OptiX Ray Tracing Engine.
 
 ### Overview
 

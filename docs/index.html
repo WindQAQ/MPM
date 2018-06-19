@@ -6,7 +6,7 @@
 -->
 <html>
 	<head>
-		<title>Stellar by HTML5 UP</title>
+		<title>Material Point Method</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -19,17 +19,17 @@
 
 				<!-- Header -->
 					<header id="header" class="alt">
-						<span class="logo"><img src="images/logo.svg" alt="" /></span>
-						<h1>Stellar</h1>
-						<p>Just another free, fully responsive site template<br />
-						built by <a href="https://twitter.com/ajlkn">@ajlkn</a> for <a href="https://html5up.net">HTML5 UP</a>.</p>
+						<span class="logo"><img src="images/National_Taiwan_University_logo.svg" alt="" width="10%" /></span>
+						<h1>Material Point Method</h1>
+						<p>Simulating on GPU using Material Point Method and rendering<br />
+						refer to <a href="https://github.com/WindQAQ/MPM">WindQAQ/MPM</a> on GitHub.</p>
 					</header>
 
 				<!-- Nav -->
 					<nav id="nav">
 						<ul>
-							<li><a href="#intro" class="active">Introduction</a></li>
-							<li><a href="#first">First Section</a></li>
+							<li><a href="#about" class="active">About</a></li>
+							<li><a href="#demo">Demo Scenes</a></li>
 							<li><a href="#second">Second Section</a></li>
 							<li><a href="#cta">Get Started</a></li>
 						</ul>
@@ -39,50 +39,60 @@
 					<div id="main">
 
 						<!-- Introduction -->
-							<section id="intro" class="main">
+							<section id="about" class="main">
 								<div class="spotlight">
 									<div class="content">
 										<header class="major">
-											<h2>Ipsum sed adipiscing</h2>
+											<h2>About this project</h2>
 										</header>
-										<p>Sed lorem ipsum dolor sit amet nullam consequat feugiat consequat magna
-										adipiscing magna etiam amet veroeros. Lorem ipsum dolor tempus sit cursus.
-										Tempus nisl et nullam lorem ipsum dolor sit amet aliquam.</p>
+										<p>This is the final project for the course, <i>General-Purpose GPU Programming 2018 Spring @ NTU CSIE</i>, lectured by Wei-Chao Chen.</p>
+										<p>We focus on physical effect simulation using material point method. Because this course is all about GPU, our implementation is based on C++ and CUDA to accelerate the whole process with GPU computating power.</p>
 										<ul class="actions">
-											<li><a href="generic.html" class="button">Learn More</a></li>
+											<li><a href="https://github.com/WindQAQ/MPM" class="button">View on GitHub</a></li>
 										</ul>
 									</div>
-									<span class="image"><img src="images/pic01.jpg" alt="" /></span>
+									<span class="image"><img src="images/gpgpu_free_fall_01250_750x750.png" alt="" /></span>
 								</div>
 							</section>
 
 						<!-- First Section -->
-							<section id="first" class="main special">
+							<section id="demo" class="main special">
 								<header class="major">
-									<h2>Magna veroeros</h2>
+									<h2>Demo Scenes</h2>
 								</header>
-								<ul class="features">
-									<li>
-										<span class="icon major style1 fa-code"></span>
-										<h3>Ipsum consequat</h3>
-										<p>Sed lorem amet ipsum dolor et amet nullam consequat a feugiat consequat tempus veroeros sed consequat.</p>
-									</li>
-									<li>
-										<span class="icon major style3 fa-copy"></span>
-										<h3>Amed sed feugiat</h3>
-										<p>Sed lorem amet ipsum dolor et amet nullam consequat a feugiat consequat tempus veroeros sed consequat.</p>
-									</li>
-									<li>
-										<span class="icon major style5 fa-diamond"></span>
-										<h3>Dolor nullam</h3>
-										<p>Sed lorem amet ipsum dolor et amet nullam consequat a feugiat consequat tempus veroeros sed consequat.</p>
-									</li>
-								</ul>
-								<footer class="major">
+								<div class="box alt">
+									<div class="row gtr-uniform">
+										<div class="col-4">
+											<span class="image fit"><img src="images/gpgpu_free_fall_02500_470x470.png" alt="" /></span>
+											<h3>Free Fall</h3>
+											<p class="content">Free fall of several letters of snow-like substance, which forms the name of this course, "GPGPU". This demonstrates how points are affected under the influence of gravity.</p>
+											<ul class="actions special">
+												<li><a href="free_fall.html" class="button">Learn More</a></li>
+											</ul>
+										</div>
+										<div class="col-4">
+											<span class="image fit"><img src="images/two_snow_balls_500x500.png" alt="" /></span>
+											<h3>Two Snow Balls</h3>
+											<p class="content">This scene demonstrates about the collision between two snow balls with different sizes and velocities. Both are influenced by the gravity at the same time.</p>
+											<ul class="actions special">
+												<li><a href="two_snow_balls.html" class="button">Learn More</a></li>
+											</ul>
+										</div>
+										<div class="col-4">
+											<span class="image fit"><img src="images/pic01.jpg" alt="" /></span>
+											<h3>The Fall of Castle</h3>
+											<p class="content">TODO</p>
+											<ul class="actions special">
+												<li><a href="the_fall_of_castle.html" class="button">Learn More</a></li>
+											</ul>
+										</div>
+									</div>
+								</div>
+								<!-- <footer class="major">
 									<ul class="actions special">
 										<li><a href="generic.html" class="button">Learn More</a></li>
 									</ul>
-								</footer>
+								</footer> -->
 							</section>
 
 						<!-- Second Section -->
@@ -161,9 +171,7 @@
 							<ul class="icons">
 								<li><a href="#" class="icon fa-twitter alt"><span class="label">Twitter</span></a></li>
 								<li><a href="#" class="icon fa-facebook alt"><span class="label">Facebook</span></a></li>
-								<li><a href="#" class="icon fa-instagram alt"><span class="label">Instagram</span></a></li>
-								<li><a href="#" class="icon fa-github alt"><span class="label">GitHub</span></a></li>
-								<li><a href="#" class="icon fa-dribbble alt"><span class="label">Dribbble</span></a></li>
+								<li><a href="https://github.com/WindQAQ/MPM" class="icon fa-github alt"><span class="label">GitHub</span></a></li>
 							</ul>
 						</section>
 						<p class="copyright">&copy; Untitled. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>

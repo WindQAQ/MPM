@@ -495,7 +495,7 @@ __host__ void MPMSolver::writeGLBuffer() {
         particles.end(),
         bufptr,
         [=] __device__ (Particle& p) -> float4 {
-            return make_float4(3.0 * p.position(0) - 1.0, 3.0 * p.position(1), 3.0 * p.position(2), 1.0);
+            return make_float4(5.0 * p.position(0) - 2.5, 5.0 * p.position(1), 5.0 * p.position(2) - 2.5, 1.0);
         }
     );
 

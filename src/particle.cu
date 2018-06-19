@@ -87,48 +87,6 @@ __host__ __device__ void Particle::updateDeformationGradient(const Eigen::Matrix
     def_elastic = u_tmp * v.transpose();
 }
 
-__host__ __device__ void Particle::applyBoundaryCollision() {
-    float vn;
-    Eigen::Vector3f vt, normal, pos(position + TIMESTEP * velocity);
-
-    bool collision;
-
-    for (int i = 0; i < 3; i++) {
-        collision = false;
-        normal.setZero();
-
-        if (pos(i) <= BOX_BOUNDARY_1) {
-            collision = true;
-            normal(i) = 1.0f;
-        }
-        else if (pos(i) >= BOX_BOUNDARY_2) {
-            collision = true;
-            normal(i) = -1.0f;
-        }
-
-        if (collision) {
-            vn = velocity.dot(normal);
-
-            if (vn >= 0.0f) continue;
-
-            for (int j = 0; j < 3; j++) {
-                if (j != i) {
-                    velocity(j) *= STICKY_WALL;
-                }
-            }
-
-            vt = velocity - vn * normal;
-
-            if (vt.norm() <= -FRICTION * vn) {
-                velocity.setZero();
-                return;
-            }
-
-            velocity = vt + FRICTION * vn *  vt.normalized();
-        }
-    }
-}
-
 __host__ __device__ const thrust::pair<float, float> Particle::computeHardening() const {
     float factor = expf(hardening * (1 - linalg::determinant(def_plastic)));
     return thrust::make_pair(mu * factor, lambda * factor);

@@ -62,6 +62,50 @@ __device__ int getGridIndex(const Eigen::Vector3i& pos) {
     return (pos(2) * GRID_BOUND_Y * GRID_BOUND_X) + (pos(1) * GRID_BOUND_X) + pos(0);
 }
 
+__device__ Eigen::Vector3f applyBoundaryCollision(const Eigen::Vector3f& position, const Eigen::Vector3f& velocity) {
+    float vn;
+    Eigen::Vector3f vt, normal, ret(velocity);
+
+    bool collision;
+
+    for (int i = 0; i < 3; i++) {
+        collision = false;
+        normal.setZero();
+
+        if (position(i) <= BOX_BOUNDARY_1) {
+            collision = true;
+            normal(i) = 1.0f;
+        }
+        else if (position(i) >= BOX_BOUNDARY_2) {
+            collision = true;
+            normal(i) = -1.0f;
+        }
+
+        if (collision) {
+            vn = ret.dot(normal);
+
+            if (vn >= 0.0f) continue;
+
+            for (int j = 0; j < 3; j++) {
+                if (j != i) {
+                    ret(j) *= STICKY_WALL;
+                }
+            }
+
+            vt = ret - vn * normal;
+
+            if (vt.norm() <= -FRICTION * vn) {
+                ret.setZero();
+                return ret;
+            }
+
+            ret = vt + FRICTION * vn *  vt.normalized();
+        }
+    }
+
+    return ret;
+}
+
 struct f {
     __host__ __device__
     Grid operator()(const int& idx) {
@@ -207,7 +251,7 @@ __host__ void MPMSolver::bodyCollisions() {
         grids.begin(),
         grids.end(),
         [=] __device__ (Grid& g) {
-            g.applyBoundaryCollision();
+            g.velocity_star = applyBoundaryCollision((g.idx.cast<float>() * PARTICLE_DIAM) + (TIMESTEP * g.velocity_star), g.velocity_star);
         }
     );
 }
@@ -435,7 +479,7 @@ __host__ void MPMSolver::particleBodyCollisions() {
         particles.begin(),
         particles.end(),
         [=] __device__ (Particle& p) {
-            p.applyBoundaryCollision();
+            p.velocity = applyBoundaryCollision(p.position + TIMESTEP * p.velocity, p.velocity);
         }
     );
 }

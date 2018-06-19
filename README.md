@@ -53,6 +53,7 @@ For more details, please go to our [Project Page](https://windqaq.github.io/MPM/
 - [GLFW](http://www.glfw.org/)
 - [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/index.html)
 - [stb_image](https://github.com/nothings/stb)
+- [FFmpeg](https://www.ffmpeg.org/)
 
 ### Contact
 

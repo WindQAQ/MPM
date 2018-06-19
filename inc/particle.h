@@ -13,7 +13,9 @@ class Particle {
     float volume, mass;
     Eigen::Vector3f position, velocity;
 
+    float hardening;
     float lambda, mu;
+    float compression, stretch;
 
     Eigen::Matrix3f def_elastic, def_plastic;
 
@@ -22,7 +24,7 @@ class Particle {
 #endif
 
     __host__ __device__ Particle() {}
-    __host__ __device__ Particle(const Eigen::Vector3f&, const Eigen::Vector3f&, float, float, float);
+    __host__ __device__ Particle(const Eigen::Vector3f&, const Eigen::Vector3f&, float, float, float, float, float, float);
 
     __host__ __device__ virtual ~Particle() {}
     __host__ __device__ Particle& operator=(const Particle&);

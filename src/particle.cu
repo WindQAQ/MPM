@@ -2,8 +2,15 @@
 #include "constant.h"
 #include "linalg.h"
 
-__host__ __device__ Particle::Particle(const Eigen::Vector3f& _position, const Eigen::Vector3f& _velocity, float _mass, float _lambda, float _mu)
-    : position(_position), velocity(_velocity), mass(_mass), lambda(_lambda), mu(_mu) {
+__host__ __device__ Particle::Particle(const Eigen::Vector3f& _position, const Eigen::Vector3f& _velocity, float _mass,
+                                       float _hardening, float young, float poisson, float _compression, float _stretch)
+    : position(_position), velocity(_velocity), mass(_mass),
+      hardening(_hardening),
+      compression(_compression), stretch(_stretch) {
+
+    lambda = (poisson * young) / ((1.0f + poisson) * (1.0f - 2.0f * poisson));
+    mu = young / (2.0f * (1.0f + poisson));
+
     def_elastic.setIdentity();
     def_plastic.setIdentity();
 #if ENABLE_IMPLICIT
@@ -17,8 +24,11 @@ __host__ __device__ Particle& Particle::operator=(const Particle& other) {
     mass = other.mass;
     position = other.position;
     velocity = other.velocity;
+    hardening = other.hardening;
     lambda = other.lambda;
     mu = other.mu;
+    compression = other.compression;
+    stretch = other.stretch;
     def_elastic = other.def_elastic;
     def_plastic = other.def_plastic;
 #if ENABLE_IMPLICIT
@@ -60,7 +70,7 @@ __host__ __device__ void Particle::updateDeformationGradient(const Eigen::Matrix
 
     // clip values
     auto e = s.diagonal().array();
-    e = e.min(1 + CRIT_STRETCH).max(1 - CRIT_COMPRESS);
+    e = e.min(1 + stretch).max(1 - compression);
 
 #if ENABLE_IMPLICIT
     polar_r = u * v.transpose();
@@ -120,7 +130,7 @@ __host__ __device__ void Particle::applyBoundaryCollision() {
 }
 
 __host__ __device__ const thrust::pair<float, float> Particle::computeHardening() const {
-    float factor = expf(HARDENING * (1 - linalg::determinant(def_plastic)));
+    float factor = expf(hardening * (1 - linalg::determinant(def_plastic)));
     return thrust::make_pair(mu * factor, lambda * factor);
 }
 

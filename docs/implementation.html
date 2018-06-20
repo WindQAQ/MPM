@@ -42,8 +42,8 @@
 								<h2>Viewing real-time result with OpenGL</h2>
 								<p><span class="image right"><img src="images/OpenGL_screenshot.png" alt=""/></span>For real-time result viewing, we use OpenGL to create a simple scene, and provide several camera views from differnet angles. Then, we bind the vertex buffer to CUDA, so that we can just use the normal OpenGL function to render the MPM particles easily.<br /> We use this scene to check if the simulation is doing well. After we get a satisfying result, we save the particle positions of each frame for OptiX™ Ray Tracing Engine.</p>
 
-								<h2>Voxelization and ray tracing</h2>
-								<p></p>
+								<h2>Voxelizing and ray tracing</h2>
+								<p>From saved particle positions, we load point cloud, voxelize it, and render voxels. GVDB-Voxels library is used for rendering of sparse volumetric data. Integrating with NVIDIA OptiX, it produces high quality ray-tracing result. After all point cloud data are rendered, the saved images of each frame can be combined as video.</p>
 
 								<h2>Generating Video</h2>
 								<p></p>

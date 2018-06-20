@@ -45,7 +45,9 @@ To generate videos from saved rendered frames,
 
 ### How to Build
 
-### How to Run
+Source code are put in `inc/` and `src/`. To compile the simulation program, simply type `make`. Compiled objects would appear in `obj/`, and there would be the executable file in root directory of the repository.
+
+To compile the rendering program, *GVDB-Voxels* library and *Nvidia OptiX* ray tracing engine are needed. So please build *gvdb-library* at first. Then build the code in directory, `gPointCloud/`, which is modified from the sample code. For more information, please go to [NVIDIA/gvdb-voxels](https://github.com/NVIDIA/gvdb-voxels).
 
 ### Screenshots
 
@@ -72,4 +74,4 @@ To generate videos from saved rendered frames,
 
 ### Contact
 
-Issues and pull requests are welcomed! Feel free to contact project owner [Tzu-Wei Sung](mailto:windqaq@gmail.com), or contributors [Yist Lin](mailto:yishen992@gmail.com) and [Rikiu Chen](mailto:jcly.rikiu@gmail.com).
+Issues and pull requests are welcomed, so are stars! ^_^ Feel free to contact project owner [Tzu-Wei Sung](mailto:windqaq@gmail.com), or contributors [Yist Lin](mailto:yishen992@gmail.com) and [Rikiu Chen](mailto:jcly.rikiu@gmail.com).

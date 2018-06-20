@@ -4,7 +4,7 @@
 
 This is the final project for the course, *General-Purpose GPU Programming* @ NTU CSIE.
 
-We model and simulate fluid-like materials, such as snow and sand, using material point method. MPM is implemented in C++ + CUDA on GPU. And OpenGL is used for real-time result viewing. Besides, for high quality rendering, we use NVIDIA GVDB + OptiX Ray Tracing Engine.
+We model and simulate fluid-like materials, such as snow and sand, using material point method. MPM is implemented in C++ & CUDA. And OpenGL is used for real-time result viewing. Besides, for high quality rendering, we use NVIDIA GVDB + OptiX Ray Tracing Engine.
 
 ### Overview
 
@@ -14,25 +14,48 @@ The material point method (MPM) is a numerical technique used to simulate the be
 
 ### Implementations
 
-For more details, please go to our [Project Page](https://windqaq.github.io/MPM/)
+For more details about implementation, please go to our [Project Page](https://windqaq.github.io/MPM/)
+
+### Dependencies
+
+##### Required
+
+- CUDA
+- [OpenGL](https://learnopengl.com/)
+- [GLFW](http://www.glfw.org/)
+- [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/index.html)
+
+The following libraries has been put into this repository,
+
+- [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
+- [svd3](https://github.com/ericjang/svd3)
+- [stb_image](https://github.com/nothings/stb)
+- [glad](https://github.com/Dav1dde/glad)
+
+##### Optional
+
+For high quality rendering as screenshots,
+
+- [GVDB-Voxels](https://github.com/NVIDIA/gvdb-voxels)
+- [NVIDIA OptiX](https://developer.nvidia.com/optix)
+
+To generate videos from saved rendered frames,
+
+- [FFmpeg](https://www.ffmpeg.org)
+
+### How to Build
+
+### How to Run
 
 ### Screenshots
 
-##### Letters falling scene 1
-
-![gpgpu free fall crashed on ground](images/gpgpu_free_fall_02500_800x600.png)
-
-##### Letters falling scene 2
+##### Letters falling scene
 
 ![gpgpu free fall crashed completely](images/gpgpu_free_fall_04000_800x600.png)
 
-##### The small snow ball penetrated the bigger one
+##### Two snow balls crashed each other
 
-![small snow ball penetrated the bigger one](images/two_snow_balls.png)
-
-##### The small snow ball crashed the bigger one
-
-![small snow ball crashed the bigger one](images/two_snow_balls2.png)
+![two snow balls crashed each other](images/two_snow_balls.png)
 
 ### References
 
@@ -46,14 +69,6 @@ For more details, please go to our [Project Page](https://windqaq.github.io/MPM/
 - [Azmisov - snow](https://github.com/Azmisov/snow)
 - [JAGJ10 - Snow](https://github.com/JAGJ10/Snow)
 - [utilForever - SnowSimulation](https://github.com/utilForever/SnowSimulation)
-
-##### Tools
-
-- [Learn OpenGL](https://learnopengl.com/)
-- [GLFW](http://www.glfw.org/)
-- [OpenGL Mathematics (GLM)](https://glm.g-truc.net/0.9.9/index.html)
-- [stb_image](https://github.com/nothings/stb)
-- [FFmpeg](https://www.ffmpeg.org/)
 
 ### Contact
 

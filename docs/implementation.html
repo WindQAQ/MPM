@@ -45,8 +45,9 @@
 								<h2>Voxelizing and ray tracing</h2>
 								<p>From saved particle positions, we load point cloud, voxelize it, and render voxels. GVDB-Voxels library is used for rendering of sparse volumetric data. Integrating with NVIDIA OptiX, it produces high quality ray-tracing result. After all point cloud data are rendered, the saved images of each frame can be combined as video.</p>
 
-								<h2>Generating Video</h2>
-								<p></p>
+								<h2>Generating video</h2>
+								<p>We use FFmpeg to combine all the images into one video. For example, we save every frame in PNG format, and use the following command to generate video. We can also specify how many images being displayed in one second (fps).</p>
+								<pre><code>ffmpeg -r [fps] -pattern_type glob -i '*.png' -c:v libx264 -vf "format=yuv420p" [video name].mp4</code></pre>
 
 							</section>
 

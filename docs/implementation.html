@@ -40,7 +40,22 @@
 								<p></p>
 
 								<h2>Simulating using material point method</h2>
-								<p></p>
+								<p>
+									MPM simulation is composed of the following steps:
+									<ol>
+										<li>Rasterize particle data to the grid</li>
+										<li>Compute particle volumes and densities</li>
+										<li>Compute grid forces</li>
+										<li>Update velocities on grid </li>
+										<li>Grid-based body collisions</li>
+										<li>Solve the linear system</li>
+										<li>Update deformation gradient</li>
+										<li>Update particle velocities</li>
+										<li>Particle-based body collisions</li>
+										<li>Update particle positions</li>
+									</ol>
+									In each step, the properties of grids or particles are updated. Besides, updating grids or particles is highly parallel, so we use <a href="https://docs.nvidia.com/cuda/thrust/index.html">Thrust</a>, a C++ template CUDA library, to speed up the simulation by GPU acceleration. For more details, please refer to <a href="https://www.math.ucla.edu/~jteran/papers/SSCTS13.pdf">A material point method for snow simulation</a> and <a href="https://github.com/WindQAQ/MPM">our GitHub repo</a>.
+								</p>
 
 								<h2>Viewing real-time result with OpenGL</h2>
 								<p><span class="image right"><img src="images/OpenGL_screenshot.png" alt=""/></span>For real-time result viewing, we use OpenGL to create a simple scene, and provide several camera views from differnet angles. Then, we bind the vertex buffer to CUDA, so that we can just use the normal OpenGL function to render the MPM particles easily.<br /> We use this scene to check if the simulation is doing well. After we get a satisfying result, we save the particle positions of each frame for OptiX™ Ray Tracing Engine.</p>

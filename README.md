@@ -74,4 +74,4 @@ To compile the rendering program, *GVDB-Voxels* library and *Nvidia OptiX* ray t
 
 ### Contact
 
-Issues and pull requests are welcomed, so are stars! ^_^ Feel free to contact project owner [Tzu-Wei Sung](mailto:windqaq@gmail.com), or contributors [Yist Lin](mailto:yishen992@gmail.com) and [Rikiu Chen](mailto:jcly.rikiu@gmail.com).
+Issues and pull requests are welcomed, so are stars! ^_^ Feel free to contact project owner [Sung Tzu-Wei](mailto:windqaq@gmail.com), or contributors [Yist Lin](mailto:yishen992@gmail.com) and [Chen Li-Yu](mailto:jcly.rikiu@gmail.com).

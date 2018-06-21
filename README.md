@@ -49,6 +49,35 @@ Source code are put in `inc/` and `src/`. To compile the simulation program, sim
 
 To compile the rendering program, *GVDB-Voxels* library and *Nvidia OptiX* ray tracing engine are needed. So please build *gvdb-library* at first. Then build the code in directory, `gPointCloud/`, which is modified from the sample code. For more information, please go to [NVIDIA/gvdb-voxels](https://github.com/NVIDIA/gvdb-voxels).
 
+### How to Run
+
+First of all, run `make` to generate the executable. Then prepare your own configuration file with format as follows:
+```
+model=MODEL
+```
+where `MODEL` is a JSON file formatted as:
+```json
+{
+  "model1": {
+    "path": "PATH",
+    "translate": [50.0, 0.0, 50.0],
+    "scale": 0.5,
+    "mass": 0.000026,
+    "velocity": [0.0, -10.0, 0.0],
+    "hardening": 15.0,
+    "young": 1.4e5,
+    "poisson": 0.2,
+    "compression": 5.0e-2,
+    "stretch": 5.0e-2
+  }
+}
+```
+The `PATH` is the ascii point cloud file where each line contains three values `x y z` seperated by a single space, and other parameters  depend on your model setting. Finally, run
+```sh
+./test --config CONFIG_FILE
+```
+to simulate using MPM and render with OpenGL!
+
 ### Screenshots
 
 ##### Letters falling scene

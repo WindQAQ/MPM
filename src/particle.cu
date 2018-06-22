@@ -121,9 +121,9 @@ __host__ __device__ const Eigen::Matrix3f Particle::computeDeltaForce(const Eige
         Eigen::Matrix3f v = r.transpose() * delta_elastic - delta_elastic.transpose() * r;
 
         Eigen::Matrix3f a;
-        a << s(0, 0) + s(1, 1), s(2, 1), -s(0, 2);
-             s(1, 2), s(0, 0) + s(2, 2),  s(0, 1);
-             -s(0, 2), s(1, 0), s(1, 1) + s(2, 2);
+        a <<  s(0) + s(4),  s(5), -s(2),
+              s(5),  s(0) + s(8), s(1),
+             -s(2),  s(1),  s(4) + s(8);
 
         Eigen::Vector3f b(v(3), v(6), v(7));
 

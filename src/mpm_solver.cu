@@ -275,7 +275,7 @@ __host__ void MPMSolver::computeAr() {
                     Eigen::Vector3f gw = gradientWeight(diff);
                     int grid_idx = getGridIndex(_pos);
 
-                    f += TIMESTEP * grid_ptr[grid_idx].velocity_star * gw.transpose();
+                    f += TIMESTEP * grid_ptr[grid_idx].r * gw.transpose();
                 }
             }
         }
@@ -323,7 +323,8 @@ __host__ void MPMSolver::computeAr() {
         grids.begin(),
         grids.end(),
         [=] __device__ (Grid& g) {
-            g.ar = g.r - BETA * TIMESTEP * g.delta_force / g.mass;
+            g.ar = g.r - BETA * TIMESTEP * g.delta_force * ((g.mass > 1e-8)? (1.0 / g.mass): 0.0f);
+            g.delta_force.setZero();
         }
     );
 }
@@ -373,10 +374,11 @@ __host__ void MPMSolver::integrateImplicit() {
             grids.begin(),
             grids.end(),
             [=] __device__ (Grid& g) {
-                float alpha = (g.r).cwiseProduct(g.ar).sum() / (g.ap).cwiseProduct(g.ap).sum();
+                float rar = (g.r).cwiseProduct(g.ar).sum(), apap = (g.ap).cwiseProduct(g.ap).sum();
+                float alpha = (apap > 1e-8)? rar / apap: 0.0f;
                 g.v += alpha * g.p;
-                g.rar_tmp = (g.r).cwiseProduct(g.ar).sum();
                 g.r += (-alpha * g.ap);
+                g.rar_tmp = rar;
             }
         );
 
@@ -387,12 +389,21 @@ __host__ void MPMSolver::integrateImplicit() {
             grids.begin(),
             grids.end(),
             [=] __device__ (Grid& g) {
-                float beta = (g.r).cwiseProduct(g.ar).sum() / g.rar_tmp;
+                float beta = (g.rar_tmp > 1e-8)? (g.r).cwiseProduct(g.ar).sum() / g.rar_tmp: 0.0f;
                 g.p = g.r + beta * g.p;
                 g.ap = g.ar + beta * g.ap;
             }
         );
     }
+
+    // copy back
+    thrust::for_each(
+        grids.begin(),
+        grids.end(),
+        [=] __device__ (Grid& g) {
+            g.velocity_star = g.v;
+        }
+    );
 }
 #endif
 

@@ -19,26 +19,6 @@ __host__ __device__ Particle::Particle(const Eigen::Vector3f& _position, const E
 #endif
 }
 
-__host__ __device__ Particle& Particle::operator=(const Particle& other) {
-    volume = other.volume;
-    mass = other.mass;
-    position = other.position;
-    velocity = other.velocity;
-    hardening = other.hardening;
-    lambda = other.lambda;
-    mu = other.mu;
-    compression = other.compression;
-    stretch = other.stretch;
-    def_elastic = other.def_elastic;
-    def_plastic = other.def_plastic;
-#if ENABLE_IMPLICIT
-    polar_r = other.polar_r;
-    polar_s = other.polar_s;
-#endif
-
-    return *this;
-}
-
 __host__ std::ostream& operator<<(std::ostream& os, const Particle& p) {
     unsigned short x = p.position(0) * 65535.0f / (GRID_BOUND_X * PARTICLE_DIAM),
                    y = p.position(1) * 65535.0f / (GRID_BOUND_Y * PARTICLE_DIAM),

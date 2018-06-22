@@ -25,8 +25,6 @@ class Grid {
     {}
     __host__ __device__ virtual ~Grid() {}
 
-    __host__ __device__ Grid& operator=(const Grid&);
-
     __host__ __device__ void reset();
     __host__ __device__ void updateVelocity();
     __host__ __device__ void applyBoundaryCollision();
